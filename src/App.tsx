@@ -30,38 +30,24 @@ function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-brand-border z-50 flex items-center justify-between px-6">
-      <Link to="/" className="flex items-center gap-2">
+      {/* Left: Logo */}
+      <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-accent/20">
           <Award size={18} />
         </div>
         <span className="font-serif font-bold text-lg text-brand-accent tracking-[2px] uppercase hidden sm:inline">NailPro Academy</span>
       </Link>
-      
-      <div className="flex items-center gap-3 sm:gap-6">
-        {/* Language Switcher */}
-        <div className="flex items-center gap-1 bg-brand-bg p-1 rounded-xl border border-brand-border">
-          {(['vi', 'en', 'es'] as const).map((lang) => (
-            <button
-              key={lang}
-              onClick={() => setLanguage(lang)}
-              className={cn(
-                "w-7 h-7 rounded-lg text-[10px] font-bold uppercase transition-all",
-                language === lang ? "bg-brand-accent text-white shadow-sm" : "hover:bg-white text-brand-text/40"
-              )}
-            >
-              {lang}
-            </button>
-          ))}
-        </div>
 
-        <div className="relative group hidden md:block">
+      {/* Center: Procedures Dropdown */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+        <div className="relative group">
           <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-1 hover:text-brand-accent transition-all">
             <ClipboardList size={14} className="text-brand-accent" />
             <span>{t.nav.procedures}</span>
             <ChevronDown size={12} className="opacity-40" />
           </button>
           
-          <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-brand-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] overflow-hidden">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-48 bg-white border border-brand-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] overflow-hidden">
              <Link 
                to="/manicure" 
                className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
@@ -99,7 +85,10 @@ function Navbar() {
              </Link>
           </div>
         </div>
-
+      </div>
+      
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         {profile?.role === 'admin' && (
           <Link 
             to="/admin" 
@@ -109,7 +98,8 @@ function Navbar() {
             <span className="hidden md:inline">{t.nav.admin}</span>
           </Link>
         )}
-        {user ? (
+        
+        {user && (
           <div className="flex items-center gap-3">
             <div className="hidden lg:block text-right">
               <p className="text-xs font-bold text-brand-text">{profile?.displayName}</p>
@@ -123,7 +113,23 @@ function Navbar() {
               <LogOut size={18} />
             </button>
           </div>
-        ) : null}
+        )}
+
+        {/* Language Switcher (Moved to rightmost) */}
+        <div className="flex items-center gap-1 bg-brand-bg p-1 rounded-xl border border-brand-border ml-2">
+          {(['vi', 'en', 'es'] as const).map((lang) => (
+            <button
+              key={lang}
+              onClick={() => setLanguage(lang)}
+              className={cn(
+                "w-7 h-7 rounded-lg text-[10px] font-bold uppercase transition-all",
+                language === lang ? "bg-brand-accent text-white shadow-sm" : "hover:bg-white text-brand-text/40"
+              )}
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
       </div>
     </nav>
   );
