@@ -6,9 +6,9 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { Globe, LogOut, BookOpen, User, Play, ChevronRight, CheckCircle2, Award, Layout, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ClipboardList } from 'lucide-react';
+import { Globe, LogOut, BookOpen, User, Play, ChevronRight, CheckCircle2, Award, Layout, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ClipboardList, LogIn } from 'lucide-react';
 import { auth, db } from './lib/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { collection, getDocs, doc, getDoc, query, orderBy } from 'firebase/firestore';
 import { Course, Lesson } from './types';
 import { motion } from 'motion/react';
@@ -27,6 +27,15 @@ import YouTube from 'react-youtube';
 function Navbar() {
   const { user, profile } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-brand-border z-50 flex items-center justify-between px-6">
@@ -99,7 +108,7 @@ function Navbar() {
           </Link>
         )}
         
-        {user && (
+        {user ? (
           <div className="flex items-center gap-3">
             <div className="hidden lg:block text-right">
               <p className="text-xs font-bold text-brand-text">{profile?.displayName}</p>
@@ -113,6 +122,14 @@ function Navbar() {
               <LogOut size={18} />
             </button>
           </div>
+        ) : (
+          <button 
+            onClick={handleLogin}
+            className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-brand-accent/20"
+          >
+            <LogIn size={14} />
+            <span>{t.nav.login}</span>
+          </button>
         )}
 
         {/* Language Switcher (Moved to rightmost) */}

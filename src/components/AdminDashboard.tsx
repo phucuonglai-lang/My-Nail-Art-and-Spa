@@ -34,6 +34,7 @@ interface SortableLessonItemProps {
 }
 
 const SortableLessonItem: React.FC<SortableLessonItemProps> = ({ lesson, index, onEdit, onDelete }) => {
+  const { t } = useLanguage();
   const {
     attributes,
     listeners,
@@ -75,16 +76,22 @@ const SortableLessonItem: React.FC<SortableLessonItemProps> = ({ lesson, index, 
         <p className="text-[10px] text-brand-text/40 truncate max-w-sm">{lesson.videoUrl}</p>
       </div>
       
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-60 md:opacity-0 group-hover:opacity-100 transition-opacity">
         <button 
-          onClick={() => onEdit(lesson)}
+          onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
           className="p-2 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition-all"
+          title={t.admin.edit_lesson}
         >
           <Edit2 size={16} />
         </button>
         <button 
-          onClick={() => onDelete(lesson.id)}
-          className="p-2 text-rose-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+          onClick={(e) => { 
+            e.preventDefault();
+            e.stopPropagation(); 
+            onDelete(lesson.id); 
+          }}
+          className="p-2 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all"
+          title={t.admin.delete_confirm_lesson}
         >
           <Trash2 size={16} />
         </button>
@@ -248,22 +255,39 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCourse = async (id: string) => {
-    if (!window.confirm("Xác nhận xóa khóa học này?")) return;
+    if (!window.confirm(t.admin.delete_confirm_course)) return;
     try {
       await deleteDoc(doc(db, 'courses', id));
       fetchData();
     } catch (error) {
-      alert(t.admin.delete_confirm_course);
+      console.error("Delete Course Error:", error);
+      alert("Error deleting course: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
   const handleDeleteLesson = async (courseId: string, lessonId: string) => {
-    if (!window.confirm(t.admin.delete_confirm_lesson)) return;
+    console.log("handleDeleteLesson triggered:", { courseId, lessonId });
+    
+    if (!courseId || !lessonId) {
+      console.error("Missing courseId or lessonId:", { courseId, lessonId });
+      alert("System error: Missing IDs for deletion");
+      return;
+    }
+    
+    const confirmMessage = t.admin.delete_confirm_lesson || "Xác nhận xóa bài học?";
+    if (!window.confirm(confirmMessage)) return;
+    
     try {
-      await deleteDoc(doc(db, 'courses', courseId, 'lessons', lessonId));
-      fetchLessons(courseId);
+      console.log("Attempting to delete lesson document...");
+      const lessonRef = doc(db, 'courses', courseId, 'lessons', lessonId);
+      await deleteDoc(lessonRef);
+      console.log("Lesson deleted successfully from Firestore");
+      
+      await fetchLessons(courseId);
+      console.log("Lessons refreshed for course:", courseId);
     } catch (error) {
-      alert("Error deleting lesson");
+      console.error("Delete Lesson Error:", error);
+      alert("Error deleting lesson: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
