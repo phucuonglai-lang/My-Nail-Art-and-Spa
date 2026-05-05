@@ -22,6 +22,7 @@ import { db } from '../lib/firebase';
 import { ProcedureStep } from '../types';
 import YouTube from 'react-youtube';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../lib/utils';
 
 const PedicureProcedure = () => {
   const { t } = useLanguage();
@@ -167,12 +168,15 @@ const PedicureProcedure = () => {
             <div className="space-y-3">
               {phase.items.map((item, i) => {
                 const isActive = activeStep === item.title;
-                const videoId = item.id ? getVideoId(item.videoUrl) : '';
+                const videoId = item.videoUrl ? getVideoId(item.videoUrl) : '';
 
                 return (
                   <div 
                     key={i}
-                    className={`bg-white/80 p-3 rounded-xl border transition-all cursor-pointer group ${isActive ? 'border-brand-accent shadow-lg ring-1 ring-brand-accent/20' : 'border-white hover:border-brand-accent/30'}`}
+                    className={cn(
+                      "bg-white/80 p-3 rounded-xl border transition-all cursor-pointer group",
+                      isActive ? "border-brand-accent shadow-lg ring-1 ring-brand-accent/20" : "border-white hover:border-brand-accent/30"
+                    )}
                     onClick={() => setActiveStep(isActive ? null : item.title)}
                   >
                     <div className="flex items-center justify-between group/title">
@@ -186,28 +190,41 @@ const PedicureProcedure = () => {
                             <Edit2 size={12} />
                           </button>
                         )}
-                        <CheckCircle2 className={`w-4 h-4 transition-all ${isActive ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'} ${phase.textColor}`} />
+                        <CheckCircle2 className={cn(
+                          "w-4 h-4 transition-all",
+                          isActive ? "opacity-100 scale-110" : "opacity-0 group-hover:opacity-100",
+                          phase.textColor
+                        )} />
                       </div>
                     </div>
-                    <p className={`text-xs text-gray-500 mt-1 leading-relaxed transition-all ${isActive ? 'mb-3' : ''}`}>
+                    <p className={cn("text-xs text-gray-500 mt-1 leading-relaxed transition-all", isActive && "mb-3")}>
                       {item.desc}
                     </p>
                     
                     {isActive && videoId && (
-                      <div className="relative mt-2 aspect-video rounded-lg overflow-hidden bg-black shadow-inner">
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
+                      >
                         <YouTube
                           videoId={videoId}
-                          containerClassName="w-full h-full"
                           className="w-full h-full"
                           opts={{
                             width: '100%',
                             height: '100%',
                             playerVars: {
-                              autoplay: 1,
                               modestbranding: 1,
+                              origin: window.location.origin,
+                              playsinline: 1
                             },
                           }}
                         />
+                      </motion.div>
+                    )}
+                    {isActive && !videoId && (
+                      <div className="mt-2 p-3 bg-slate-100 rounded-lg border border-dashed border-slate-300 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                        Video coming soon
                       </div>
                     )}
                   </div>

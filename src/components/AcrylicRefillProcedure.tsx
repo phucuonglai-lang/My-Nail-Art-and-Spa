@@ -215,7 +215,11 @@ const AcrylicRefillProcedure = () => {
                           opts={{
                             width: '100%',
                             height: '100%',
-                            playerVars: { modestbranding: 1 }
+                            playerVars: { 
+                              modestbranding: 1,
+                              origin: window.location.origin,
+                              playsinline: 1
+                            }
                           }}
                         />
                       </motion.div>

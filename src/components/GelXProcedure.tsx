@@ -170,7 +170,7 @@ const GelXProcedure = () => {
             <div className="space-y-3">
               {phase.items.map((item, i) => {
                 const isActive = activeStep === item.title;
-                const videoId = item.id ? getVideoId(item.videoUrl) : '';
+                const videoId = item.videoUrl ? getVideoId(item.videoUrl) : '';
 
                 return (
                   <div 
@@ -199,25 +199,34 @@ const GelXProcedure = () => {
                         )} />
                       </div>
                     </div>
-                    <p className={`text-xs text-gray-500 mt-1 leading-relaxed transition-all ${isActive ? 'mb-3' : ''}`}>
+                    <p className={cn("text-xs text-gray-500 mt-1 leading-relaxed transition-all", isActive && "mb-3")}>
                       {item.desc}
                     </p>
 
                     {isActive && videoId && (
-                      <div className="relative mt-2 aspect-video rounded-lg overflow-hidden bg-black shadow-inner">
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
+                      >
                         <YouTube
                           videoId={videoId}
-                          containerClassName="w-full h-full"
                           className="w-full h-full"
                           opts={{
                             width: '100%',
                             height: '100%',
                             playerVars: {
-                              autoplay: 1,
                               modestbranding: 1,
+                              origin: window.location.origin,
+                              playsinline: 1
                             },
                           }}
                         />
+                      </motion.div>
+                    )}
+                    {isActive && !videoId && (
+                      <div className="mt-2 p-3 bg-slate-100 rounded-lg border border-dashed border-slate-300 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                        Video coming soon
                       </div>
                     )}
                   </div>
