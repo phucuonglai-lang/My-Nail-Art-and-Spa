@@ -20,20 +20,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true); // Ensure loading is true when state changes
       try {
+        console.log("Auth State Changed:", firebaseUser?.email);
         setUser(firebaseUser);
         
         if (firebaseUser) {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          let userDoc;
+          try {
+            userDoc = await getDoc(userDocRef);
+          } catch (e) {
+            console.error("Error fetching user profile:", e);
+            // If we can't read the profile, it might be a rules issue or network issue
+            // We'll still allow the user to be "logged in" at the auth level
+          }
+
           const isAdminEmail = firebaseUser.email?.toLowerCase() === 'phucuonglai@gmail.com';
 
-          if (userDoc.exists()) {
+          if (userDoc && userDoc.exists()) {
             const data = userDoc.data() as UserProfile;
             // Auto-upgrade existing student to admin if they match the admin email
             if (isAdminEmail && data.role !== 'admin') {
               const updatedProfile = { ...data, role: 'admin' as const };
-              await setDoc(doc(db, 'users', firebaseUser.uid), updatedProfile);
-              setProfile(updatedProfile);
+              try {
+                await setDoc(doc(db, 'users', firebaseUser.uid), updatedProfile);
+                setProfile(updatedProfile);
+              } catch (e) {
+                console.error("Error upgrading to admin:", e);
+                setProfile(data); // Revert to existing data if update fails
+              }
             } else {
               setProfile(data);
             }
@@ -42,23 +58,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const newProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || 'Học viên',
+              displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Học viên',
               role: isAdminEmail ? 'admin' : 'student',
               enrolledCourses: [],
               createdAt: new Date().toISOString(),
             };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-            setProfile(newProfile);
+            try {
+              await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
+              setProfile(newProfile);
+            } catch (e) {
+              console.error("Error creating user profile:", e);
+              // If profile creation fails, we might still want to let them see the UI
+              setProfile(newProfile); 
+            }
           }
         } else {
           setProfile(null);
         }
       } catch (error) {
-        console.error("Auth Profile Error:", error);
-        if (error instanceof Error && error.message.includes('permission')) {
-          handleFirestoreError(error, OperationType.GET, 'auth/profile');
-        }
-        setProfile(null);
+        console.error("Global Auth Profile Error:", error);
       } finally {
         setLoading(false);
       }

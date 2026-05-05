@@ -50,11 +50,24 @@ function Navbar() {
   const handleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+      // Add custom parameter to force account selection and help with some pop-up issues
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const result = await signInWithPopup(auth, provider);
+      console.log("Login success:", result.user.email);
+    } catch (error: any) {
       console.error("Login failed:", error);
+      if (error.code === 'auth/popup-blocked') {
+        alert("Trình duyệt đã chặn cửa sổ đăng nhập. Vui lòng cho phép hiện pop-up và thử lại.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, no need to alert
+      } else {
+        alert("Đăng nhập thất bại: " + error.message);
+      }
     }
   };
+
+  const { loading: authLoading } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-border z-50 flex items-center justify-between px-6">
@@ -106,10 +119,18 @@ function Navbar() {
         ) : (
           <button 
             onClick={handleLogin}
-            className="flex items-center gap-2 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-brand-accent/20"
+            disabled={authLoading}
+            className={cn(
+              "flex items-center gap-2 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-brand-accent/20",
+              authLoading && "opacity-50 cursor-not-allowed"
+            )}
           >
-            <LogIn size={14} />
-            <span>{t.nav.login}</span>
+            {authLoading ? (
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <LogIn size={14} />
+            )}
+            <span>{authLoading ? '...' : t.nav.login}</span>
           </button>
         )}
 
