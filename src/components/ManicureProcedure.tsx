@@ -34,10 +34,14 @@ const ManicureProcedure = () => {
   const isAdmin = profile?.role === 'admin';
 
   const fetchData = async () => {
-    const q = query(collection(db, 'procedures', 'manicure', 'steps'), orderBy('order'));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+    try {
+      const q = query(collection(db, 'procedures', 'manicure', 'steps'), orderBy('order'));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+      }
+    } catch (error) {
+      console.error("Fetch Manicure Steps Error:", error);
     }
   };
 

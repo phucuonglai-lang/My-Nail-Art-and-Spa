@@ -34,10 +34,15 @@ const AcrylicRefillProcedure = () => {
   const isAdmin = profile?.role === 'admin';
 
   const fetchData = async () => {
-    const q = query(collection(db, 'procedures', 'refill', 'steps'), orderBy('order'));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+    try {
+      const q = query(collection(db, 'procedures', 'refill', 'steps'), orderBy('order'));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+      }
+    } catch (error) {
+      console.error("Fetch Refill Steps Error:", error);
+      // Fallback remains to static translations handled in getPhaseSteps
     }
   };
 
@@ -60,9 +65,9 @@ const AcrylicRefillProcedure = () => {
       const staticStep = (t.acrylicRefill.steps as any)[`s${i}`];
       return {
         id: `s${i}`,
-        title: staticStep.title,
-        desc: staticStep.desc,
-        videoUrl: staticStep.videoUrl,
+        title: staticStep?.title || `Step ${i}`,
+        desc: staticStep?.desc || '',
+        videoUrl: staticStep?.videoUrl || '',
         order: i
       } as ProcedureStep;
     });
@@ -84,7 +89,7 @@ const AcrylicRefillProcedure = () => {
       fetchData();
     } catch (error) {
       console.error("Save Step Error:", error);
-      alert("Error saving step.");
+      alert("Error saving step. Please check your permissions.");
     } finally {
       setSaving(false);
     }
@@ -163,56 +168,66 @@ const AcrylicRefillProcedure = () => {
             </div>
 
             <div className="space-y-3">
-              {phase.items.map((item, i) => (
-                <div 
-                  key={i}
-                  className={cn(
-                    "bg-white/80 p-3 rounded-lg border transition-all cursor-pointer group",
-                    activeStep === item.title ? "border-teal-400 shadow-md ring-1 ring-teal-400/20" : "border-white hover:border-gray-300"
-                  )}
-                  onClick={() => setActiveStep(item.title)}
-                >
-                  <div className="flex items-center justify-between group/title">
-                    <span className="font-bold text-gray-700 leading-tight">{item.title}</span>
-                    <div className="flex items-center gap-2">
-                       {isAdmin && (
-                        <button 
-                          onClick={(e) => handleEditClick(e, item)}
-                          className="p-1 text-teal-600 hover:bg-teal-50 rounded opacity-0 group-hover/title:opacity-100 transition-opacity"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                      )}
-                      <CheckCircle2 className={cn(
-                        "w-4 h-4 transition-opacity",
-                        activeStep === item.title ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                        phase.textColor
-                      )} />
+              {phase.items.map((item, i) => {
+                const isActive = activeStep === item.title;
+                const videoId = item.videoUrl ? getVideoId(item.videoUrl) : '';
+
+                return (
+                  <div 
+                    key={i}
+                    className={cn(
+                      "bg-white/80 p-3 rounded-lg border transition-all cursor-pointer group",
+                      isActive ? "border-teal-400 shadow-md ring-1 ring-teal-400/20" : "border-white hover:border-gray-300"
+                    )}
+                    onClick={() => setActiveStep(isActive ? null : item.title)}
+                  >
+                    <div className="flex items-center justify-between group/title">
+                      <span className="font-bold text-gray-700 leading-tight">{item.title}</span>
+                      <div className="flex items-center gap-2">
+                         {isAdmin && (
+                          <button 
+                            onClick={(e) => handleEditClick(e, item)}
+                            className="p-1 text-teal-600 hover:bg-teal-50 rounded opacity-0 group-hover/title:opacity-100 transition-opacity"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                        )}
+                        <CheckCircle2 className={cn(
+                          "w-4 h-4 transition-opacity",
+                          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                          phase.textColor
+                        )} />
+                      </div>
                     </div>
+                    <p className={cn("text-xs text-gray-500 mt-1 leading-relaxed", isActive && "mb-3")}>
+                      {item.desc}
+                    </p>
+                    
+                    {isActive && videoId && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
+                      >
+                        <YouTube 
+                          videoId={videoId}
+                          className="w-full h-full"
+                          opts={{
+                            width: '100%',
+                            height: '100%',
+                            playerVars: { modestbranding: 1 }
+                          }}
+                        />
+                      </motion.div>
+                    )}
+                    {isActive && !videoId && (
+                      <div className="mt-2 p-3 bg-slate-100 rounded-lg border border-dashed border-slate-300 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                        Video coming soon
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                    {item.desc}
-                  </p>
-                  
-                  {activeStep === item.title && item.videoUrl && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
-                    >
-                      <YouTube 
-                        videoId={getVideoId(item.videoUrl)}
-                        className="w-full h-full"
-                        opts={{
-                          width: '100%',
-                          height: '100%',
-                          playerVars: { modestbranding: 1 }
-                        }}
-                      />
-                    </motion.div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         ))}

@@ -34,10 +34,14 @@ const AcrylicProcedure = () => {
   const isAdmin = profile?.role === 'admin';
 
   const fetchData = async () => {
-    const q = query(collection(db, 'procedures', 'acrylic', 'steps'), orderBy('order'));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+    try {
+      const q = query(collection(db, 'procedures', 'acrylic', 'steps'), orderBy('order'));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+      }
+    } catch (error) {
+      console.error("Fetch Acrylic Steps Error:", error);
     }
   };
 
@@ -170,7 +174,7 @@ const AcrylicProcedure = () => {
                     "bg-white/80 p-3 rounded-lg border transition-all cursor-pointer group",
                     activeStep === item.title ? "border-orange-400 shadow-md ring-1 ring-orange-400/20" : "border-white hover:border-gray-300"
                   )}
-                  onClick={() => setActiveStep(item.title)}
+                  onClick={() => setActiveStep(activeStep === item.title ? null : item.title)}
                 >
                   <div className="flex items-center justify-between group/title">
                     <span className="font-bold text-gray-700 leading-tight">{item.title}</span>
