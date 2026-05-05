@@ -36,18 +36,18 @@ service cloud.firestore {
 
     // Procedures
     match /procedures/{procedureId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
 
       match /steps/{stepId} {
-        allow read: if isSignedIn();
+        allow read: if true;
         allow write: if isAdmin();
       }
     }
 
     // Policies
     match /policies/{policyId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

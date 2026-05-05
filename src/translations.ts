@@ -212,16 +212,16 @@ export const translations = {
         finish: 'GĐ 3: HOÀN THIỆN & MASSAGE'
       },
       steps: {
-        s1: { title: "1. Tháo sơn & Vệ sinh", desc: "Tẩy sơn cũ, lau Alcohol/Acetone sạch sẽ.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s2: { title: "2. Check hở (Lifting)", desc: "Cắt bột hở bằng đầu Diamond, sau đó mới chạy nhám 80.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s3: { title: "3. Dũa Shape", desc: "Cắt ngắn và dũa lại form móng theo ý khách.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s4: { title: "4. Sơn Primer ( bột ) / Basecoat ( Gel builder )", desc: "Sơn liên kết lên phần móng thật mới mọc.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s5: { title: "5. Đắp bột / gel builder", desc: "Bù bột/gel vào phần trống và dàn đều bề mặt.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s6: { title: "6. Dũa máy chuẩn", desc: "Dũa shape, chạy đầu Diamond & đầu giấy nhám.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s7: { title: "7. Buffer tạo sừng", desc: "Làm mịn bề mặt bột giúp sơn bám bền.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s8: { title: "8. Khách rửa tay", desc: "Làm sạch bụi bẩn trước khi sơn màu.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s9: { title: "9. Tỉa da & Sơn 1-2-1", desc: "Tỉa da sót & Sơn 1 Base - 2 Màu - 1 Top.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" },
-        s10: { title: "10. Massage & Hoàn tất", desc: "Thư giãn tay khách và kiểm tra tổng thể.", videoUrl: "https://www.youtube.com/embed/3e_KExaIyVw" }
+        s1: { title: "1. Tháo sơn & Vệ sinh", desc: "Tẩy sơn cũ, lau Alcohol/Acetone sạch sẽ.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s2: { title: "2. Check hở (Lifting)", desc: "Cắt bột hở bằng đầu Diamond, sau đó mới chạy nhám 80.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s3: { title: "3. Dũa Shape", desc: "Cắt ngắn và dũa lại form móng theo ý khách.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s4: { title: "4. Sơn Primer ( bột ) / Basecoat ( Gel builder )", desc: "Sơn liên kết lên phần móng thật mới mọc.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s5: { title: "5. Đắp bột / gel builder", desc: "Bù bột/gel vào phần trống và dàn đều bề mặt.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s6: { title: "6. Dũa máy chuẩn", desc: "Dũa shape, chạy đầu Diamond & đầu giấy nhám.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s7: { title: "7. Buffer tạo sừng", desc: "Làm mịn bề mặt bột giúp sơn bám bền.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s8: { title: "8. Khách rửa tay", desc: "Làm sạch bụi bẩn trước khi sơn màu.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s9: { title: "9. Tỉa da & Sơn 1-2-1", desc: "Tỉa da sót & Sơn 1 Base - 2 Màu - 1 Top.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" },
+        s10: { title: "10. Massage & Hoàn tất", desc: "Thư giãn tay khách và kiểm tra tổng thể.", videoUrl: "https://www.youtube.com/embed/IuP3_wF7_00" }
       }
     }
   },
