@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Course, Lesson } from '../types';
-import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical } from 'lucide-react';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch, setDoc } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
+import { Course, Lesson, Procedure, ProcedureStep, Policy } from '../types';
+import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck } from 'lucide-react';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { cn } from '../lib/utils';
+import { serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Language, translations } from '../translations';
 
 import {
   DndContext,
@@ -55,34 +58,43 @@ const SortableLessonItem: React.FC<SortableLessonItemProps> = ({ lesson, index, 
       ref={setNodeRef} 
       style={style}
       className={cn(
-        "bg-white p-4 rounded-2xl border border-brand-border flex items-center gap-4 transition-shadow relative group",
-        isDragging ? "shadow-2xl ring-2 ring-brand-accent/50 z-50 opacity-90" : "hover:shadow-md"
+        "bg-brand-card p-5 rounded-[24px] border border-brand-border flex items-center gap-5 transition-all relative group",
+        isDragging ? "shadow-[0_32px_64px_rgba(0,0,0,0.8)] ring-2 ring-brand-accent/50 z-50 opacity-90 scale-[1.02]" : "hover:border-brand-accent/30 hover:shadow-xl"
       )}
     >
       <div 
         {...attributes} 
         {...listeners}
-        className="cursor-grab active:cursor-grabbing p-1 text-brand-text/20 hover:text-brand-accent transition-colors shrink-0"
+        className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-brand-accent transition-colors shrink-0 bg-white/5 rounded-xl"
       >
         <GripVertical size={20} />
       </div>
       
-      <div className="w-10 h-10 bg-brand-bg rounded-xl flex items-center justify-center font-bold text-brand-accent shrink-0 select-none">
-        {index + 1}
+      <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center font-black text-white/20 shrink-0 select-none group-hover:text-brand-accent transition-colors">
+        {(index + 1).toString().padStart(2, '0')}
       </div>
       
       <div className="flex-1 min-w-0">
-        <h4 className="font-bold text-sm text-brand-text truncate">{lesson.title}</h4>
-        <p className="text-[10px] text-brand-text/40 truncate max-w-sm">{lesson.videoUrl}</p>
+        <h4 className="font-bold text-base text-white truncate uppercase tracking-tight">{lesson.title}</h4>
+        <div className="flex items-center gap-2 mt-1.5">
+          {lesson.videoUrl ? (
+            <div className="flex items-center gap-2 bg-rose-500/10 px-2 py-0.5 rounded-md">
+              <Video size={10} className="text-rose-500" />
+              <p className="text-[9px] text-rose-500/80 truncate max-w-[200px] font-bold uppercase tracking-widest">{lesson.videoUrl}</p>
+            </div>
+          ) : (
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/10">No Video Attached</span>
+          )}
+        </div>
       </div>
       
-      <div className="flex items-center gap-1 opacity-60 md:opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
         <button 
           onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
-          className="p-2 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition-all"
+          className="p-3 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-xl transition-all"
           title={t.admin.edit_lesson}
         >
-          <Edit2 size={16} />
+          <Edit2 size={18} />
         </button>
         <button 
           onClick={(e) => { 
@@ -90,10 +102,10 @@ const SortableLessonItem: React.FC<SortableLessonItemProps> = ({ lesson, index, 
             e.stopPropagation(); 
             onDelete(lesson.id); 
           }}
-          className="p-2 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all"
+          className="p-3 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
           title={t.admin.delete_confirm_lesson}
         >
-          <Trash2 size={16} />
+          <Trash2 size={18} />
         </button>
       </div>
     </div>
@@ -101,13 +113,21 @@ const SortableLessonItem: React.FC<SortableLessonItemProps> = ({ lesson, index, 
 }
 
 export default function AdminDashboard() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [steps, setSteps] = useState<ProcedureStep[]>([]);
+  const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'courses' | 'lessons'>('courses');
+  const [view, setView] = useState<'courses' | 'lessons' | 'procedures' | 'steps' | 'policies'>('courses');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(null);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
 
   // Form states
   const [isAdding, setIsAdding] = useState(false);
@@ -117,6 +137,40 @@ export default function AdminDashboard() {
   const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
     title: '', videoUrl: '', content: '', order: 1
   });
+  const [newProcedure, setNewProcedure] = useState<Partial<Procedure>>({
+    id: '', icon: 'ClipboardList', color: 'text-brand-accent', difficulty: 'Normal'
+  });
+  const [newStep, setNewStep] = useState<Partial<ProcedureStep>>({
+    title: '', desc: '', videoUrl: '', order: 1
+  });
+  const [newPolicy, setNewPolicy] = useState<Partial<Policy>>({
+    title: '', type: 'pdf', url: '', content: ''
+  });
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size (Firestore limit is 1MB total, so let's cap file at 800KB for safety)
+    if (file.size > 800 * 1024) {
+      alert("Tệp quá lớn. Vui lòng chọn tệp dưới 800KB để đảm bảo hiệu suất.");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNewPolicy({ ...newPolicy, url: base64 });
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      alert("Lỗi khi đọc tệp.");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -136,9 +190,32 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const coursesSnap = await getDocs(collection(db, 'courses'));
-      const coursesData = coursesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-      setCourses(coursesData);
+      // Fetch Courses
+      try {
+        const coursesSnap = await getDocs(collection(db, 'courses'));
+        const coursesData = coursesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Course));
+        setCourses(coursesData);
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, 'courses');
+      }
+
+      // Fetch Procedures
+      try {
+        const proceduresSnap = await getDocs(collection(db, 'procedures'));
+        const proceduresData = proceduresSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Procedure));
+        setProcedures(proceduresData);
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, 'procedures');
+      }
+
+      // Fetch Policies
+      try {
+        const policiesSnap = await getDocs(query(collection(db, 'policies'), orderBy('createdAt', 'desc')));
+        const policiesData = policiesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Policy));
+        setPolicies(policiesData);
+      } catch (e) {
+        handleFirestoreError(e, OperationType.LIST, 'policies');
+      }
     } catch (error) {
       console.error("Fetch Data Error:", error);
     } finally {
@@ -147,10 +224,238 @@ export default function AdminDashboard() {
   };
 
   const fetchLessons = async (courseId: string) => {
+    if (!courseId) return;
     const q = query(collection(db, 'courses', courseId, 'lessons'), orderBy('order'));
     const lessonsSnap = await getDocs(q);
-    const lessonsData = lessonsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson));
+    const lessonsData = lessonsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Lesson));
     setLessons(lessonsData);
+  };
+
+  const fetchSteps = async (procedureId: string) => {
+    if (!procedureId) return;
+    const q = query(collection(db, 'procedures', procedureId, 'steps'), orderBy('order'));
+    const stepsSnap = await getDocs(q);
+    const stepsData = stepsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProcedureStep));
+    setSteps(stepsData);
+  };
+
+  const handleAddProcedure = async () => {
+    if (!newProcedure.id) return;
+    try {
+      const docId = newProcedure.id.toLowerCase().replace(/\s+/g, '-');
+      const procedureData = {
+        ...newProcedure,
+        id: docId,
+        translations: {
+          [language]: {
+            nav: newProcedure.id,
+            title: newProcedure.id.toUpperCase(),
+            subtitle: 'Procedure Details',
+            steps: {}
+          }
+        }
+      };
+
+      if (editingProcedureId) {
+        await updateDoc(doc(db, 'procedures', editingProcedureId), newProcedure);
+      } else {
+        await setDoc(doc(db, 'procedures', docId), procedureData);
+      }
+      setIsAdding(false);
+      setEditingProcedureId(null);
+      setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent', difficulty: 'Normal' });
+      fetchData();
+    } catch (error) {
+      alert("Error saving procedure: " + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const handleAddStep = async () => {
+    if (!selectedProcedureId || !newStep.title) return;
+    
+    const processedStep = {
+      ...newStep,
+      videoUrl: convertToEmbedUrl(newStep.videoUrl || '')
+    };
+
+    try {
+      if (editingStepId) {
+        await updateDoc(doc(db, 'procedures', selectedProcedureId, 'steps', editingStepId), processedStep);
+      } else {
+        await addDoc(collection(db, 'procedures', selectedProcedureId, 'steps'), {
+          ...processedStep,
+          order: steps.length + 1
+        });
+      }
+      setIsAdding(false);
+      setEditingStepId(null);
+      setNewStep({ title: '', desc: '', videoUrl: '', order: steps.length + 1 });
+      fetchSteps(selectedProcedureId);
+    } catch (error) {
+      alert("Error saving step");
+    }
+  };
+
+  const handleImportStaticProcedures = async () => {
+    if (!window.confirm("Import static procedure data from translations to Firestore?")) return;
+    setLoading(true);
+    try {
+      const batch = writeBatch(db);
+      // Map IDs to original translation keys
+      const staticProcs = [
+        { id: 'manicure', langKey: 'manicure', icon: 'Scissors', color: 'text-rose-500' },
+        { id: 'pedicure', langKey: 'pedicure', icon: 'Brush', color: 'text-emerald-500' },
+        { id: 'gel-x', langKey: 'gelX', icon: 'Sparkles', color: 'text-purple-500' },
+        { id: 'acrylic', langKey: 'acrylic', icon: 'Zap', color: 'text-amber-500' },
+        { id: 'refill', langKey: 'acrylicRefill', icon: 'RefreshCw', color: 'text-blue-500' },
+      ];
+
+      for (const proc of staticProcs) {
+        const procRef = doc(db, 'procedures', proc.id);
+        
+        // Build translations for all supported languages
+        const procTranslations: any = {};
+        const availableLangs: Language[] = ['vi', 'en', 'es'];
+        
+        availableLangs.forEach(lang => {
+          const langData = (translations as any)[lang]?.[proc.langKey];
+          if (langData) {
+            procTranslations[lang] = {
+              nav: langData.nav || proc.id,
+              title: langData.title || proc.id.toUpperCase(),
+              subtitle: langData.subtitle || 'Procedure Details',
+              phases: langData.phases || {},
+              steps: langData.steps || {}
+            };
+          }
+        });
+
+        batch.set(procRef, {
+          id: proc.id,
+          icon: proc.icon,
+          color: proc.color,
+          difficulty: 'Normal',
+          translations: procTranslations
+        }, { merge: true });
+
+        // Add steps as sub-collection
+        const stepsData = (translations as any).vi[proc.langKey]?.steps;
+        if (stepsData) {
+          Object.keys(stepsData).forEach((key, index) => {
+            const stepRef = doc(db, 'procedures', proc.id, 'steps', key);
+            batch.set(stepRef, {
+              ...stepsData[key],
+              id: key,
+              order: index + 1
+            }, { merge: true });
+          });
+        }
+      }
+
+      await batch.commit();
+      alert("Imported successfully!");
+      fetchData();
+    } catch (error) {
+      console.error("Import Error:", error);
+      if (error instanceof Error && error.message.includes('permission')) {
+        handleFirestoreError(error, OperationType.WRITE, 'procedures/batch');
+      }
+      alert("Error importing data: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProcedure = async (id: string) => {
+    console.log("ATTEMPTING DELETE PROCEDURE:", id);
+    const confirmMessage = t.admin.delete_confirm_procedure || "Xác nhận xóa quy trình này?";
+    if (!window.confirm(confirmMessage)) return;
+    try {
+      await deleteDoc(doc(db, 'procedures', id));
+      alert("Đã xóa quy trình thành công");
+      fetchData();
+    } catch (error) {
+      console.error("Delete Procedure Error:", error);
+      const isPermissionError = error instanceof Error && error.message.toLowerCase().includes('permission');
+      if (isPermissionError) {
+        alert("Lỗi: Không có quyền xóa. Vui lòng kiểm tra xem email của bạn đã được xác thực chưa.");
+      } else {
+        alert("Lỗi khi xóa quy trình: " + (error instanceof Error ? error.message : String(error)));
+      }
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `procedures/${id}`);
+      } catch (e) {
+        // Error already logged by handleFirestoreError
+      }
+    }
+  };
+
+  const handleDeleteStep = async (procId: string, stepId: string) => {
+    console.log("handleDeleteStep triggered:", { procId, stepId });
+    const confirmMessage = t.admin.delete_confirm_step || "Xác nhận xóa bước này?";
+    if (!window.confirm(confirmMessage)) return;
+    try {
+      await deleteDoc(doc(db, 'procedures', procId, 'steps', stepId));
+      fetchSteps(procId);
+    } catch (error) {
+      console.error("Delete Step Error:", error);
+      const isPermissionError = error instanceof Error && error.message.toLowerCase().includes('permission');
+      if (isPermissionError) {
+        alert("Lỗi: Không có quyền xóa. Vui lòng kiểm tra email xác thực.");
+      } else {
+        alert("Lỗi khi xóa bước: " + (error instanceof Error ? error.message : String(error)));
+      }
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `procedures/${procId}/steps/${stepId}`);
+      } catch (e) {}
+    }
+  };
+
+  const handleAddPolicy = async () => {
+    if (!newPolicy.title) return;
+    try {
+      const policyData = {
+        ...newPolicy,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingPolicyId) {
+        await updateDoc(doc(db, 'policies', editingPolicyId), policyData);
+      } else {
+        await addDoc(collection(db, 'policies'), {
+          ...policyData,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsAdding(false);
+      setEditingPolicyId(null);
+      setNewPolicy({ title: '', type: 'pdf', url: '', content: '' });
+      setUploading(false);
+      fetchData();
+    } catch (error) {
+      console.error("Save Policy Error:", error);
+      alert("Error saving policy");
+    }
+  };
+
+  const handleDeletePolicy = async (id: string) => {
+    console.log("handleDeletePolicy triggered:", id);
+    if (!window.confirm("Xác nhận xóa tài liệu/chính sách này?")) return;
+    try {
+      await deleteDoc(doc(db, 'policies', id));
+      fetchData();
+    } catch (error) {
+       console.error("Delete Policy Error:", error);
+       const isPermissionError = error instanceof Error && error.message.toLowerCase().includes('permission');
+       if (isPermissionError) {
+         alert("Lỗi: Không có quyền xóa. Vui lòng xác thực email.");
+       } else {
+         alert("Lỗi khi xóa tài liệu: " + (error instanceof Error ? error.message : String(error)));
+       }
+       try {
+         handleFirestoreError(error, OperationType.DELETE, `policies/${id}`);
+       } catch (e) {}
+    }
   };
 
   const handleLessonOrderUpdate = async (newLessons: Lesson[]) => {
@@ -173,6 +478,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingCourseId(null);
+    setEditingLessonId(null);
+    setEditingProcedureId(null);
+    setEditingStepId(null);
+    setEditingPolicyId(null);
+    setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
+    setNewLesson({ title: '', videoUrl: '', content: '', order: 0 });
+    setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent' });
+    setNewStep({ title: '', desc: '', videoUrl: '', order: 0 });
+    setNewPolicy({ title: '', type: 'pdf', url: '', content: '' });
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -188,12 +507,17 @@ export default function AdminDashboard() {
   const handleAddCourse = async () => {
     if (!newCourse.title || !newCourse.description) return;
     try {
-      await addDoc(collection(db, 'courses'), newCourse);
+      if (editingCourseId) {
+        await updateDoc(doc(db, 'courses', editingCourseId), newCourse);
+      } else {
+        await addDoc(collection(db, 'courses'), newCourse);
+      }
       setIsAdding(false);
+      setEditingCourseId(null);
       setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
       fetchData();
     } catch (error) {
-      alert("Lỗi khi thêm khóa học");
+      alert("Lỗi khi lưu khóa học");
     }
   };
 
@@ -254,14 +578,47 @@ export default function AdminDashboard() {
     setIsAdding(true);
   };
 
+  const handleEditCourse = (course: Course) => {
+    setNewCourse({
+      title: course.title,
+      description: course.description,
+      thumbnail: course.thumbnail,
+      category: course.category,
+      level: course.level
+    });
+    setEditingCourseId(course.id);
+    setIsAdding(true);
+  };
+
+  const handleEditProcedure = (proc: Procedure) => {
+    setNewProcedure({
+      id: proc.id,
+      icon: proc.icon,
+      color: proc.color,
+      difficulty: proc.difficulty
+    });
+    setEditingProcedureId(proc.id);
+    setIsAdding(true);
+  };
+
   const handleDeleteCourse = async (id: string) => {
-    if (!window.confirm(t.admin.delete_confirm_course)) return;
+    console.log("handleDeleteCourse triggered:", id);
+    const confirmMessage = t.admin.delete_confirm_course || "Xác nhận xóa khóa học này?";
+    if (!window.confirm(confirmMessage)) return;
     try {
       await deleteDoc(doc(db, 'courses', id));
       fetchData();
     } catch (error) {
       console.error("Delete Course Error:", error);
-      alert("Error deleting course: " + (error instanceof Error ? error.message : String(error)));
+      const isPermissionError = error instanceof Error && error.message.toLowerCase().includes('permission');
+      if (isPermissionError) {
+        alert("Lỗi: Không có quyền xóa. Vui lòng xác thực email.");
+      } else {
+        alert("Lỗi khi xóa khóa học: " + (error instanceof Error ? error.message : String(error)));
+      }
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `courses/${id}`);
+      } catch (e) {}
     }
   };
 
@@ -293,102 +650,175 @@ export default function AdminDashboard() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-      <div className="w-10 h-10 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin" />
+      <div className="w-12 h-12 border-4 border-brand-accent/10 border-t-brand-accent rounded-full animate-spin shadow-[0_0_20px_rgba(255,45,85,0.2)]" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-brand-bg font-sans pt-20 pb-20 px-6">
-      <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+    <div className="min-h-screen bg-brand-bg font-sans pt-24 pb-24 px-6 md:px-12">
+      <div className="max-w-7xl mx-auto">
+        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 mb-16 relative">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-accent/5 blur-[120px] rounded-full -z-10" />
+          
+          {auth.currentUser && !auth.currentUser.emailVerified && (
+            <div className="absolute top-0 left-0 right-0 -translate-y-16 bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-4 animate-pulse">
+              <ShieldCheck className="text-rose-500 shrink-0" size={20} />
+              <p className="text-[10px] text-rose-500 font-black uppercase tracking-[2px]">
+                Email chưa được xác thực. Bạn có thể không thực hiện được các thao tác quản trị.
+              </p>
+            </div>
+          )}
           <div>
-            <Link to="/" className="text-[10px] font-bold uppercase tracking-widest text-brand-accent flex items-center gap-2 mb-2 hover:opacity-70">
-              <ArrowLeft size={14} /> {t.nav.back}
+            <Link to="/" className="text-[10px] font-black uppercase tracking-[5px] text-brand-accent flex items-center gap-3 mb-6 hover:opacity-70 transition-all group w-fit">
+              <div className="w-8 h-8 rounded-full border border-brand-accent/20 flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-all">
+                <ArrowLeft size={14} />
+              </div>
+              {t.nav.back}
             </Link>
-            <h1 className="text-3xl font-bold text-brand-text">{t.admin.title}</h1>
+            <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">
+              {t.admin.title}
+            </h1>
+            <p className="text-white/20 mt-4 text-[10px] font-bold uppercase tracking-[0.4em]">System Control Panel — Authority Access Only</p>
           </div>
           
-          <div className="flex bg-white p-1 rounded-2xl border border-brand-border">
-            <button 
-              onClick={() => { setView('courses'); setSelectedCourseId(null); }}
-              className={cn("px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all", view === 'courses' ? "bg-brand-accent text-white" : "text-brand-text/40")}
-            >
-              {t.admin.courses}
-            </button>
-            <button 
-              disabled={!selectedCourseId}
-              onClick={() => setView('lessons')}
-              className={cn("px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all", view === 'lessons' ? "bg-brand-accent text-white" : "text-brand-text/40", !selectedCourseId && "opacity-30")}
-            >
-              {t.admin.lessons}
-            </button>
+          <div className="flex bg-white/5 p-1.5 rounded-[28px] border border-white/5 backdrop-blur-xl overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'courses', label: t.admin.courses },
+              { id: 'procedures', label: t.admin.procedures_tab },
+              { id: 'policies', label: 'QUY ĐỊNH' }
+            ].map((tab) => (
+              <button 
+                key={tab.id}
+                onClick={() => { setView(tab.id as any); setSelectedCourseId(null); setSelectedProcedureId(null); }}
+                className={cn(
+                  "px-8 py-4 rounded-[22px] text-[10px] font-black uppercase tracking-[2px] transition-all shrink-0 active:scale-95",
+                  view === tab.id || (tab.id === 'procedures' && view === 'steps') 
+                    ? "bg-gradient-to-r from-brand-accent to-brand-purple text-white shadow-xl shadow-brand-accent/20" 
+                    : "text-white/30 hover:text-white hover:bg-white/5"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+            
+            {selectedCourseId && (
+              <button 
+                onClick={() => setView('lessons')}
+                className={cn(
+                  "px-8 py-4 rounded-[22px] text-[10px] font-black uppercase tracking-[2px] transition-all shrink-0 active:scale-95 border-l border-white/5 ml-1.5 pl-10",
+                  view === 'lessons' ? "text-brand-blue" : "text-white/20"
+                )}
+              >
+                {t.admin.lessons}
+              </button>
+            )}
+            
+            {selectedProcedureId && (
+              <button 
+                onClick={() => setView('steps')}
+                className={cn(
+                  "px-8 py-4 rounded-[22px] text-[10px] font-black uppercase tracking-[2px] transition-all shrink-0 active:scale-95 border-l border-white/5 ml-1.5 pl-10",
+                  view === 'steps' ? "text-brand-purple" : "text-white/20"
+                )}
+              >
+                {t.admin.manage_steps}
+              </button>
+            )}
           </div>
         </header>
 
-        {view === 'courses' ? (
+        {view === 'courses' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold uppercase tracking-widest text-brand-accent/50">{t.admin.courses}</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-white/50">{t.admin.courses}</h2>
               <button 
                 onClick={() => setIsAdding(true)}
-                className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:shadow-lg hover:shadow-brand-accent/20 transition-all"
+                className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
               >
-                <Plus size={16} /> {t.admin.add_course}
+                <Plus size={18} /> {t.admin.add_course}
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {courses.map(course => (
-                <div key={course.id} className="bg-white rounded-[24px] border border-brand-border overflow-hidden shadow-sm hover:shadow-xl transition-all group">
-                  <div className="aspect-[16/9] bg-brand-bg relative overflow-hidden">
-                    <img src={course.thumbnail} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button 
-                        onClick={() => { setSelectedCourseId(course.id); setView('lessons'); fetchLessons(course.id); }}
-                        className="p-3 bg-white rounded-xl text-brand-accent hover:scale-110 transition-transform" title={t.admin.lessons}
-                      >
-                        <Video size={20} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCourse(course.id)}
-                        className="p-3 bg-brand-white rounded-xl text-rose-500 hover:scale-110 transition-transform" title={t.admin.delete_confirm_course}
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
+                <div key={course.id} className="bg-brand-card rounded-[40px] border border-brand-border overflow-hidden shadow-2xl hover:shadow-[0_32px_80px_rgba(0,0,0,0.6)] transition-all group border-white/5">
+                  <div className="aspect-[16/10] bg-white/5 relative overflow-hidden">
+                    <img src={course.thumbnail || undefined} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-sm flex items-center justify-center gap-4">
+                        <button 
+                          onClick={() => { setSelectedCourseId(course.id); setView('lessons'); fetchLessons(course.id); }}
+                          className="w-14 h-14 bg-white text-brand-accent rounded-2xl hover:scale-110 transition-transform shadow-2xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 duration-500" title={t.admin.lessons}
+                        >
+                          <Video size={24} />
+                        </button>
+                        <button 
+                          onClick={() => handleEditCourse(course)}
+                          className="w-14 h-14 bg-white text-brand-blue rounded-2xl hover:scale-110 transition-transform shadow-2xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 duration-500 delay-[50ms]" title={t.admin.edit_course}
+                        >
+                          <Edit2 size={24} />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCourse(course.id);
+                          }}
+                          className="w-14 h-14 bg-white text-rose-500 rounded-2xl hover:scale-110 transition-transform shadow-2xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 duration-500 delay-100" title={t.admin.delete_confirm_course}
+                        >
+                          <Trash2 size={24} />
+                        </button>
+                      </div>
                   </div>
-                  <div className="p-5">
-                    <div className="text-[9px] font-bold uppercase tracking-widest text-brand-accent/50 mb-1">{course.category}</div>
-                    <h3 className="font-bold text-brand-text line-clamp-1">{course.title}</h3>
+                  <div className="p-8">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-[3px] text-brand-blue py-1 px-3 bg-brand-blue/10 rounded-full">{course.category}</span>
+                      <span className="text-[10px] font-black uppercase tracking-[3px] text-white/30">{course.level}</span>
+                    </div>
+                    <h3 className="font-bold text-xl text-white tracking-tight leading-tight group-hover:text-brand-accent transition-colors">{course.title}</h3>
                   </div>
                 </div>
               ))}
+
+              {/* Quick Add Course Card */}
+              <button 
+                onClick={() => setIsAdding(true)}
+                className="aspect-[16/10] bg-white/5 rounded-[40px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 group hover:bg-white/10 hover:border-brand-accent/50 transition-all cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-accent group-hover:text-white transition-all shadow-xl">
+                  <Plus size={32} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[4px] text-white/20 group-hover:text-white transition-all">{t.admin.add_course}</span>
+              </button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {view === 'lessons' && (
           <div>
-            <div className="flex items-center justify-between mb-6 text-brand-text">
-              <div className="flex items-center gap-4">
-                 <button onClick={() => setView('courses')} className="p-2 bg-white border border-brand-border rounded-xl text-brand-accent">
-                    <ArrowLeft size={18} />
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-6">
+                 <button onClick={() => setView('courses')} className="w-12 h-12 bg-white/5 border border-white/5 rounded-2xl text-white flex items-center justify-center hover:bg-white/10 transition-all">
+                    <ArrowLeft size={20} />
                  </button>
                  <div>
-                    <h2 className="text-lg font-bold uppercase tracking-widest leading-none">{t.admin.lessons}</h2>
-                    <p className="text-xs opacity-50 mt-1">{courses.find(c => c.id === selectedCourseId)?.title}</p>
+                    <h2 className="text-2xl font-bold uppercase tracking-tight text-white leading-none mb-2">{t.admin.lessons}</h2>
+                    <p className="text-[10px] text-white/20 uppercase tracking-[4px] font-bold font-mono">{courses.find(c => c.id === selectedCourseId)?.title}</p>
                  </div>
               </div>
               <button 
-                onClick={() => setIsAdding(true)}
-                className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:shadow-lg hover:shadow-brand-accent/20 transition-all"
+                onClick={() => { setIsAdding(true); setEditingLessonId(null); setNewLesson({ title: '', videoUrl: '', content: '', order: lessons.length + 1 }); }}
+                className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
               >
-                <Plus size={16} /> {t.admin.add_lesson}
+                <Plus size={18} /> {t.admin.add_lesson}
               </button>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-[10px] text-brand-text/30 font-bold uppercase tracking-widest px-4 italic">
-                {t.admin.reorder_tip}
-              </p>
+            <div className="space-y-6">
+              <div className="bg-brand-blue/10 p-4 rounded-2xl border border-brand-blue/20 flex items-center gap-3">
+                <Sparkles size={16} className="text-brand-blue" />
+                <p className="text-[10px] text-brand-blue font-bold uppercase tracking-[3px]">
+                  {t.admin.reorder_tip}
+                </p>
+              </div>
               
               <DndContext
                 sensors={sensors}
@@ -409,13 +839,246 @@ export default function AdminDashboard() {
                         onDelete={(id) => handleDeleteLesson(selectedCourseId!, id)}
                       />
                     )) : (
-                      <div className="text-center py-20 bg-white rounded-3xl border border-brand-border border-dashed">
-                        <p className="text-brand-text/30 italic text-sm font-serif">{t.admin.no_lessons}</p>
+                      <div className="text-center py-32 bg-white/5 rounded-[48px] border border-brand-border border-dashed">
+                        <p className="text-white/20 italic text-sm font-bold uppercase tracking-widest">{t.admin.no_lessons}</p>
                       </div>
                     )}
                   </div>
                 </SortableContext>
               </DndContext>
+            </div>
+          </div>
+        )}
+
+        {view === 'procedures' && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-white/50">{t.admin.procedures_tab}</h2>
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleImportStaticProcedures}
+                  className="flex items-center gap-3 bg-white/5 text-white/40 border border-white/10 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[2px] hover:bg-white/10 transition-all active:scale-95"
+                >
+                  <RefreshCw size={16} /> Import Static
+                </button>
+                <button 
+                  onClick={() => setIsAdding(true)}
+                  className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+                >
+                  <Plus size={18} /> {t.admin.add_procedure}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {procedures.length > 0 ? procedures.map(proc => (
+                <div key={proc.id} className="bg-brand-card p-8 rounded-[40px] border border-brand-border hover:border-brand-purple/50 shadow-2xl transition-all group relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-8 relative z-10">
+                    <div className={cn("w-16 h-16 rounded-[24px] bg-white/5 flex items-center justify-center shadow-inner", proc.color)}>
+                      <ClipboardList size={32} />
+                    </div>
+                    <div className="flex items-center gap-2 opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setSelectedProcedureId(proc.id); 
+                           setView('steps'); 
+                           fetchSteps(proc.id); 
+                         }}
+                         className="w-12 h-12 bg-white/5 text-brand-purple hover:bg-brand-purple hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         title="Manage Steps"
+                       >
+                         <Settings size={20} />
+                       </button>
+                       <button 
+                         onClick={() => handleEditProcedure(proc)}
+                         className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         title="Edit Procedure"
+                       >
+                         <Edit2 size={20} />
+                       </button>
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleDeleteProcedure(proc.id);
+                         }}
+                         className="w-12 h-12 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         title="Xóa"
+                       >
+                         <Trash2 size={20} />
+                       </button>
+                    </div>
+                  </div>
+                  <h3 className="font-black text-2xl text-white uppercase tracking-tight mb-2 relative z-10">{proc.id}</h3>
+                  <p className="text-[10px] text-white/20 font-black uppercase tracking-[5px] relative z-10">
+                    {Object.keys(proc.translations || {}).length} LOCALIZATIONS
+                  </p>
+                  <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-brand-purple/5 blur-[40px] rounded-full group-hover:bg-brand-purple/10 transition-colors" />
+                </div>
+              )) : null}
+
+              {/* Quick Add Procedure Card */}
+              <button 
+                onClick={() => setIsAdding(true)}
+                className="p-8 bg-white/5 rounded-[40px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 group hover:bg-white/10 hover:border-brand-purple/50 transition-all cursor-pointer min-h-[200px]"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-purple group-hover:text-white transition-all shadow-xl">
+                  <Plus size={32} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[4px] text-white/20 group-hover:text-white transition-all">{t.admin.add_procedure}</span>
+              </button>
+
+              {procedures.length === 0 && (
+                <div className="col-span-full py-40 text-center bg-white/5 rounded-[60px] border-2 border-dashed border-brand-border mt-8">
+                  <p className="text-white/10 italic mb-8 uppercase tracking-[0.3em] font-black">{t.admin.no_procedures || "No procedures found"}</p>
+                  <button 
+                    onClick={handleImportStaticProcedures}
+                    className="inline-flex items-center gap-4 bg-white/5 text-white border border-white/10 px-10 py-5 rounded-3xl font-black uppercase tracking-[4px] text-[10px] hover:bg-white/10 transition-all active:scale-95"
+                  >
+                    <RefreshCw size={18} /> Import from static data
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {view === 'steps' && (
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-6 text-white">
+                 <button onClick={() => setView('procedures')} className="w-12 h-12 bg-white/5 border border-white/5 rounded-2xl text-white flex items-center justify-center hover:bg-white/10 transition-all">
+                    <ArrowLeft size={20} />
+                 </button>
+                 <div>
+                    <h2 className="text-2xl font-bold uppercase tracking-tight leading-none mb-2">{t.admin.manage_steps}</h2>
+                    <p className="text-[10px] text-white/20 uppercase tracking-[4px] font-bold font-mono">{selectedProcedureId}</p>
+                 </div>
+              </div>
+              <button 
+                onClick={() => { setIsAdding(true); setEditingStepId(null); }}
+                className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+              >
+                <Plus size={18} /> {t.admin.add_step}
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              {steps.map((step, idx) => (
+                <div key={step.id} className="bg-brand-card p-6 rounded-[32px] border border-brand-border flex items-center gap-8 group hover:border-brand-purple/30 transition-all shadow-xl">
+                  <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center font-black text-xl text-white/20 shrink-0 group-hover:text-brand-purple transition-colors">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-lg text-white uppercase tracking-tight">{step.title}</h4>
+                    <p className="text-[11px] text-white/40 mt-1.5 line-clamp-2 leading-relaxed">{step.desc}</p>
+                    {step.videoUrl && (
+                      <div className="flex items-center gap-2 mt-3 text-rose-500 bg-rose-500/5 px-2 py-1 rounded-lg w-fit">
+                        <Video size={10} />
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate max-w-sm">{step.videoUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <button 
+                      onClick={() => {
+                        setEditingStepId(step.id);
+                        setNewStep({ title: step.title, desc: step.desc, videoUrl: step.videoUrl, order: step.order });
+                        setIsAdding(true);
+                      }}
+                      className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteStep(selectedProcedureId!, step.id)}
+                      className="w-12 h-12 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'policies' && (
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-white/50">QUY ĐỊNH & CHÍNH SÁCH</h2>
+              <button 
+                onClick={() => { setIsAdding(true); setEditingPolicyId(null); setNewPolicy({ title: '', type: 'pdf', url: '', content: '' }); }}
+                className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+              >
+                <Plus size={18} /> THÊM TÀI LIỆU
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {policies.length > 0 ? policies.map(policy => (
+                <div key={policy.id} className="bg-brand-card p-8 rounded-[40px] border border-brand-border hover:border-brand-blue/50 shadow-2xl transition-all group relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-8 relative z-10">
+                    <div className={cn(
+                      "w-16 h-16 rounded-[24px] flex items-center justify-center shadow-xl",
+                      policy.type === 'pdf' ? "bg-rose-500/10 text-rose-500" : 
+                      policy.type === 'doc' ? "bg-brand-blue/10 text-brand-blue" : "bg-emerald-500/10 text-emerald-500"
+                    )}>
+                      {policy.type === 'pdf' && <FileText size={28} />}
+                      {policy.type === 'doc' && <File size={28} />}
+                      {policy.type === 'html' && <Code size={28} />}
+                    </div>
+                    <div className="flex items-center gap-2 opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                       <button 
+                         onClick={() => {
+                           setEditingPolicyId(policy.id);
+                           setNewPolicy({ title: policy.title, type: policy.type, url: policy.url, content: policy.content });
+                           setIsAdding(true);
+                         }}
+                         className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         title="Sửa"
+                       >
+                         <Edit2 size={18} />
+                       </button>
+                       <button 
+                         onClick={() => handleDeletePolicy(policy.id)}
+                         className="w-12 h-12 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         title="Xóa"
+                       >
+                         <Trash2 size={18} />
+                       </button>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-lg text-white uppercase tracking-tight mb-4 relative z-10">{policy.title}</h3>
+                  <div className="flex items-center gap-4 relative z-10 mt-auto">
+                    <span className="text-[10px] font-black uppercase tracking-[3px] px-3 py-1 bg-white/5 rounded-full text-white/40">
+                      {policy.type} File
+                    </span>
+                    {policy.url && (
+                      <a href={policy.url} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-[3px] text-brand-blue hover:text-white transition-colors flex items-center gap-2">
+                        <Globe size={12} /> External Access
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )) : null}
+
+              {/* Quick Add Policy Card */}
+              <button 
+                onClick={() => { setIsAdding(true); setEditingPolicyId(null); setNewPolicy({ title: '', type: 'pdf', url: '', content: '' }); }}
+                className="aspect-[16/10] bg-white/5 rounded-[40px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 group hover:bg-white/10 hover:border-brand-blue/50 transition-all cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-blue group-hover:text-white transition-all shadow-xl">
+                  <Plus size={32} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[4px] text-white/20 group-hover:text-white transition-all">THÊM TÀI LIỆU</span>
+              </button>
+
+              {policies.length === 0 && (
+                <div className="col-span-full py-40 text-center bg-white/5 rounded-[60px] border-2 border-dashed border-brand-border mt-8">
+                  <p className="text-white/10 italic uppercase tracking-[0.3em] font-black">Chưa có quy định nào được thiết lập.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -427,121 +1090,364 @@ export default function AdminDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-brand-text/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
+              className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6"
             >
               <motion.div 
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                className="bg-brand-bg w-full max-w-xl rounded-[32px] p-8 shadow-2xl overflow-hidden relative"
+                initial={{ scale: 0.95, opacity: 0, y: 40 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 40 }}
+                className="bg-brand-card w-full max-w-2xl rounded-[48px] p-12 shadow-[0_32px_120px_rgba(0,0,0,1)] overflow-hidden relative border border-white/5 flex flex-col max-h-[90vh]"
               >
-                <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 p-2 text-brand-text/30 hover:text-brand-text transition-colors">
-                  <X size={24} />
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-accent via-brand-purple to-brand-blue" />
+                
+                <button onClick={handleCancel} className="absolute top-10 right-10 p-4 text-white/20 hover:text-white hover:bg-white/10 rounded-full transition-all">
+                  <X size={28} />
                 </button>
 
-                <h2 className="text-2xl font-bold mb-8 uppercase tracking-widest text-brand-accent">
-                  {view === 'courses' 
-                    ? t.admin.add_course 
-                    : (editingLessonId ? t.admin.edit_lesson : t.admin.add_lesson)}
-                </h2>
+                <div className="mb-10">
+                  <span className="text-[10px] font-black uppercase tracking-[5px] text-brand-accent mb-3 block">Administrator Panel</span>
+                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">
+                    {view === 'courses' && (editingCourseId ? t.admin.edit_course : t.admin.add_course)}
+                    {view === 'lessons' && (editingLessonId ? t.admin.edit_lesson : t.admin.add_lesson)}
+                    {view === 'procedures' && (editingProcedureId ? 'Sửa quy trình' : t.admin.add_procedure)}
+                    {view === 'steps' && (editingStepId ? t.admin.edit_step : t.admin.add_step)}
+                    {view === 'policies' && (editingPolicyId ? 'Sửa tài liệu' : 'Thêm tài liệu')}
+                  </h2>
+                </div>
 
-                <div className="space-y-6">
-                  {view === 'courses' ? (
+                <div className="space-y-8 overflow-y-auto flex-1 pr-2 scrollbar-hide">
+                  {view === 'courses' && (
                     <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.course_name}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.course_name}</label>
                         <input 
                           type="text" 
                           value={newCourse.title} 
                           onChange={e => setNewCourse({...newCourse, title: e.target.value})}
-                          placeholder="Example: Nail Polish technique..."
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors"
+                          placeholder="e.g., Advanced Acrylic Sculpting"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all placeholder:text-white/10"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.course_desc}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.course_desc}</label>
                         <textarea 
                           value={newCourse.description} 
                           onChange={e => setNewCourse({...newCourse, description: e.target.value})}
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors min-h-[100px]"
+                          placeholder="Provide a detailed overview..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all placeholder:text-white/10 min-h-[140px] resize-none"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.category}</label>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.category}</label>
                           <select 
                              value={newCourse.category} 
                              onChange={e => setNewCourse({...newCourse, category: e.target.value})}
-                             className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none"
+                             className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none text-white font-bold appearance-none cursor-pointer"
                           >
-                            <option>Gel Art</option>
-                            <option>Art Design</option>
-                            <option>Basic Care</option>
-                            <option>Accents</option>
+                            <option className="bg-brand-card">Gel Art</option>
+                            <option className="bg-brand-card">Art Design</option>
+                            <option className="bg-brand-card">Basic Care</option>
+                            <option className="bg-brand-card">Accents</option>
                           </select>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.level}</label>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.level}</label>
                           <select 
                              value={newCourse.level} 
                              onChange={e => setNewCourse({...newCourse, level: e.target.value as any})}
-                             className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none"
+                             className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none text-white font-bold appearance-none cursor-pointer"
                           >
-                            <option value="beginner">{t.home.beginner}</option>
-                            <option value="intermediate">{t.home.intermediate}</option>
-                            <option value="advanced">{t.home.advanced}</option>
+                            <option className="bg-brand-card" value="beginner">{t.home.beginner}</option>
+                            <option className="bg-brand-card" value="intermediate">{t.home.intermediate}</option>
+                            <option className="bg-brand-card" value="advanced">{t.home.advanced}</option>
                           </select>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.thumbnail}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.thumbnail}</label>
                         <input 
                           type="text" 
                           value={newCourse.thumbnail} 
                           onChange={e => setNewCourse({...newCourse, thumbnail: e.target.value})}
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors font-mono text-xs"
+                          placeholder="HTTPS Image URL"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all placeholder:text-white/10"
                         />
                       </div>
-                      <button 
-                        onClick={handleAddCourse}
-                        className="w-full bg-brand-accent text-white py-4 rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-brand-accent/20"
-                      >
-                        {t.admin.save_course}
-                      </button>
+                      <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
+                        <button 
+                          onClick={() => setIsAdding(false)}
+                          className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                        >
+                          {t.admin.cancel}
+                        </button>
+                        <button 
+                          onClick={handleAddCourse}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                        >
+                          {t.admin.save_course}
+                        </button>
+                      </div>
                     </>
-                  ) : (
+                  )}
+
+                  {view === 'lessons' && (
                     <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.lesson_title}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.lesson_title}</label>
                         <input 
                           type="text" 
                           value={newLesson.title} 
                           onChange={e => setNewLesson({...newLesson, title: e.target.value})}
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors"
+                          placeholder="Step Name"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.video_url}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.video_url}</label>
                         <input 
                           type="text" 
                           value={newLesson.videoUrl} 
                           onChange={e => setNewLesson({...newLesson, videoUrl: e.target.value})}
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors font-mono text-xs"
+                          placeholder="YouTube Link"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/50 block">{t.admin.notes}</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.notes}</label>
                         <textarea 
                           value={newLesson.content} 
                           onChange={e => setNewLesson({...newLesson, content: e.target.value})}
-                          className="w-full bg-white border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent transition-colors min-h-[100px]"
+                          placeholder="Instructional details..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all min-h-[140px] resize-none"
                         />
                       </div>
-                      <button 
-                        onClick={handleAddLesson}
-                        className="w-full bg-brand-accent text-white py-4 rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-brand-accent/20"
-                      >
-                        {t.admin.save_lesson}
-                      </button>
+                      <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
+                        <button 
+                          onClick={handleCancel}
+                          className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                        >
+                          {t.admin.cancel}
+                        </button>
+                        <button 
+                          onClick={handleAddLesson}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                        >
+                          {t.admin.save_lesson}
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {view === 'procedures' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.procedure_id}</label>
+                        <input 
+                          type="text" 
+                          value={newProcedure.id} 
+                          onChange={e => setNewProcedure({...newProcedure, id: e.target.value})}
+                          placeholder="e.g., gel-nails"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-black uppercase transition-all"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Icon Reference</label>
+                          <input 
+                             type="text"
+                             value={newProcedure.icon} 
+                             onChange={e => setNewProcedure({...newProcedure, icon: e.target.value})}
+                             placeholder="ClipboardList"
+                             className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none text-white font-bold"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Theme Color</label>
+                          <input 
+                             type="text"
+                             value={newProcedure.color} 
+                             onChange={e => setNewProcedure({...newProcedure, color: e.target.value})}
+                             placeholder="text-brand-blue"
+                             className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none text-white font-bold"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
+                        <button 
+                          onClick={handleCancel}
+                          className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                        >
+                          {t.admin.cancel}
+                        </button>
+                        <button 
+                          onClick={handleAddProcedure}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                        >
+                          {t.admin.add_procedure}
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {view === 'steps' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.step_title}</label>
+                        <input 
+                          type="text" 
+                          value={newStep.title} 
+                          onChange={e => setNewStep({...newStep, title: e.target.value})}
+                          placeholder="Phase Name"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.step_desc}</label>
+                        <textarea 
+                          value={newStep.desc} 
+                          onChange={e => setNewStep({...newStep, desc: e.target.value})}
+                          placeholder="Execution details..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all min-h-[120px] resize-none"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.video_url}</label>
+                        <input 
+                          type="text" 
+                          value={newStep.videoUrl} 
+                          onChange={e => setNewStep({...newStep, videoUrl: e.target.value})}
+                          placeholder="YouTube URL"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
+                        />
+                      </div>
+                      <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
+                        <button 
+                          onClick={handleCancel}
+                          className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                        >
+                          {t.admin.cancel}
+                        </button>
+                        <button 
+                          onClick={handleAddStep}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                        >
+                          {editingStepId ? t.admin.edit_step : t.admin.add_step}
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {view === 'policies' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Tên tài liệu / Chính sách</label>
+                        <input 
+                          type="text" 
+                          value={newPolicy.title} 
+                          onChange={e => setNewPolicy({...newPolicy, title: e.target.value})}
+                          placeholder="Quy định nghỉ phép..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
+                        />
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Loại tài liệu</label>
+                        <div className="grid grid-cols-3 gap-4">
+                          {(['pdf', 'doc', 'html'] as const).map(ti => (
+                            <button
+                              key={ti}
+                              type="button"
+                              onClick={() => setNewPolicy({...newPolicy, type: ti})}
+                              className={cn(
+                                "py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[3px] border transition-all active:scale-95",
+                                newPolicy.type === ti ? "bg-gradient-to-r from-brand-accent to-brand-purple text-white border-transparent" : "bg-white/5 text-white/20 border-white/5 hover:text-white hover:bg-white/10"
+                              )}
+                            >
+                              {ti}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {newPolicy.type === 'html' ? (
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Nội dung Chính sách</label>
+                          <textarea 
+                            value={newPolicy.content} 
+                            onChange={e => setNewPolicy({...newPolicy, content: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white text-base leading-relaxed transition-all min-h-[200px] font-sans resize-none"
+                            placeholder="Nhập nội dung quy định chi tiết..."
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Upload Source File (.pdf / .doc)</label>
+                            <div className="relative">
+                              <input 
+                                type="file" 
+                                accept={newPolicy.type === 'pdf' ? '.pdf' : '.doc,.docx'}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                id="policy-file-upload"
+                              />
+                              <label 
+                                htmlFor="policy-file-upload"
+                                className={cn(
+                                  "w-full flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed rounded-[32px] cursor-pointer transition-all active:scale-[0.98]",
+                                  newPolicy.url ? "border-brand-blue bg-brand-blue/10 text-brand-blue" : "border-white/10 bg-white/5 text-white/10 hover:border-white/30 hover:text-white/30"
+                                )}
+                              >
+                                {uploading ? (
+                                  <RefreshCw className="animate-spin" size={32} />
+                                ) : newPolicy.url ? (
+                                  <>
+                                    <ShieldCheck size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Tệp đã được xử lý thành công</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Chọn tệp từ thiết bị</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <span className="relative px-6 bg-brand-card text-[9px] font-black uppercase tracking-[4px] text-white/20">OR PROVIDE ACCESS LINK</span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Hệ thống lưu trữ ngoài (GDrive/Dropbox)</label>
+                            <input 
+                              type="text" 
+                              value={newPolicy.url?.startsWith('data:') ? '' : newPolicy.url} 
+                              onChange={e => setNewPolicy({...newPolicy, url: e.target.value})}
+                              placeholder="https://drive.google.com/..."
+                              className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-4 pt-4 mt-10 border-t border-white/5">
+                         <button 
+                           onClick={() => { setIsAdding(false); setEditingPolicyId(null); setNewPolicy({title: '', type: 'pdf', url: '', content: ''}); }}
+                           className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                         >
+                           {t.admin.cancel}
+                         </button>
+                         <button 
+                           onClick={handleAddPolicy}
+                           className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
+                         >
+                           <Save size={20} /> {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
+                         </button>
+                      </div>
                     </>
                   )}
                 </div>

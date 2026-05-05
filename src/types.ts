@@ -26,3 +26,48 @@ export interface Lesson {
   content: string;
   order: number;
 }
+
+export interface ProcedureStep {
+  id: string;
+  title: string;
+  desc: string;
+  videoUrl?: string;
+  order: number;
+}
+
+export interface Procedure {
+  id: string;
+  icon: string;
+  color: string;
+  difficulty: string;
+  translations: {
+    [key: string]: {
+      nav: string;
+      title: string;
+      subtitle: string;
+      phases?: {
+        [key: string]: string;
+      };
+      steps: {
+        [key: string]: {
+          title: string;
+          desc: string;
+          videoUrl?: string;
+        }
+      };
+      warning_callus_title?: string;
+      warning_callus_desc?: string;
+      copyright?: string;
+    }
+  }
+}
+
+export interface Policy {
+  id: string;
+  title: string;
+  type: 'pdf' | 'doc' | 'html';
+  url?: string;
+  content?: string; // For HTML type
+  createdAt: any;
+  updatedAt: any;
+}

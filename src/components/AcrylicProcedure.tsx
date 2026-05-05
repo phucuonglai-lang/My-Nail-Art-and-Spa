@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
   Ruler, 
@@ -6,18 +6,91 @@ import {
   Paintbrush, 
   AlertCircle,
   Gem,
-  ArrowLeft
+  ArrowLeft,
+  Edit2,
+  Save,
+  Loader2,
+  X
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { collection, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { ProcedureStep } from '../types';
+import YouTube from 'react-youtube';
 
 const AcrylicProcedure = () => {
   const { t } = useLanguage();
+  const { profile } = useAuth();
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [dbSteps, setDbSteps] = useState<ProcedureStep[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingStep, setEditingStep] = useState<ProcedureStep | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const steps = [
+  const isAdmin = profile?.role === 'admin';
+
+  const fetchData = async () => {
+    const q = query(collection(db, 'procedures', 'acrylic', 'steps'), orderBy('order'));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getVideoId = (url: string) => {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : '';
+  };
+
+  const getPhaseSteps = (stepIndices: number[]) => {
+    return stepIndices.map(i => {
+      const dbStep = dbSteps.find(s => s.id === `s${i}`);
+      if (dbStep) return dbStep;
+
+      const staticStep = (t.acrylic.steps as any)[`s${i}`];
+      return {
+        id: `s${i}`,
+        title: staticStep.title,
+        desc: staticStep.desc,
+        videoUrl: staticStep.videoUrl,
+        order: i
+      } as ProcedureStep;
+    });
+  };
+
+  const handleEditClick = (e: React.MouseEvent, step: ProcedureStep) => {
+    e.stopPropagation();
+    setEditingStep(step);
+    setIsEditing(true);
+  };
+
+  const handleSaveStep = async () => {
+    if (!editingStep) return;
+    setSaving(true);
+    try {
+      const stepRef = doc(db, 'procedures', 'acrylic', 'steps', editingStep.id);
+      await setDoc(stepRef, editingStep, { merge: true });
+      setIsEditing(false);
+      fetchData();
+    } catch (error) {
+      console.error("Save Step Error:", error);
+      alert("Error saving step.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const phases = [
     {
       id: 1,
       phase: t.acrylic.phases.prep,
@@ -25,12 +98,7 @@ const AcrylicProcedure = () => {
       borderColor: "border-orange-200",
       textColor: "text-orange-700",
       icon: <Ruler className="w-6 h-6 text-orange-500" />,
-      items: [
-        t.acrylic.steps.s1,
-        t.acrylic.steps.s2,
-        t.acrylic.steps.s3,
-        t.acrylic.steps.s4
-      ]
+      items: getPhaseSteps([1, 2, 3, 4])
     },
     {
       id: 2,
@@ -39,12 +107,7 @@ const AcrylicProcedure = () => {
       borderColor: "border-rose-200",
       textColor: "text-rose-700",
       icon: <Box className="w-6 h-6 text-rose-500" />,
-      items: [
-        t.acrylic.steps.s5,
-        t.acrylic.steps.s6,
-        t.acrylic.steps.s7,
-        t.acrylic.steps.s8
-      ]
+      items: getPhaseSteps([5, 6, 7, 8])
     },
     {
       id: 3,
@@ -53,12 +116,7 @@ const AcrylicProcedure = () => {
       borderColor: "border-emerald-200",
       textColor: "text-emerald-700",
       icon: <Paintbrush className="w-6 h-6 text-emerald-500" />,
-      items: [
-        t.acrylic.steps.s9,
-        t.acrylic.steps.s10,
-        t.acrylic.steps.s11,
-        t.acrylic.steps.s12
-      ]
+      items: getPhaseSteps([9, 10, 11, 12])
     }
   ];
 
@@ -87,7 +145,7 @@ const AcrylicProcedure = () => {
         {/* Connection Lines (Desktop only) */}
         <div className="hidden md:block absolute top-[150px] left-0 w-full h-0.5 bg-gray-200 -z-10"></div>
 
-        {steps.map((phase, idx) => (
+        {phases.map((phase, idx) => (
           <motion.div 
             key={idx}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -114,17 +172,45 @@ const AcrylicProcedure = () => {
                   )}
                   onClick={() => setActiveStep(item.title)}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/title">
                     <span className="font-bold text-gray-700 leading-tight">{item.title}</span>
-                    <CheckCircle2 className={cn(
-                      "w-4 h-4 transition-opacity",
-                      activeStep === item.title ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                      phase.textColor
-                    )} />
+                    <div className="flex items-center gap-2">
+                       {isAdmin && (
+                        <button 
+                          onClick={(e) => handleEditClick(e, item)}
+                          className="p-1 text-orange-600 hover:bg-orange-50 rounded opacity-0 group-hover/title:opacity-100 transition-opacity"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      )}
+                      <CheckCircle2 className={cn(
+                        "w-4 h-4 transition-opacity",
+                        activeStep === item.title ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                        phase.textColor
+                      )} />
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                     {item.desc}
                   </p>
+                  
+                  {activeStep === item.title && item.videoUrl && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
+                    >
+                      <YouTube 
+                        videoId={getVideoId(item.videoUrl)}
+                        className="w-full h-full"
+                        opts={{
+                          width: '100%',
+                          height: '100%',
+                          playerVars: { modestbranding: 1 }
+                        }}
+                      />
+                    </motion.div>
+                  )}
                 </div>
               ))}
             </div>
@@ -163,6 +249,79 @@ const AcrylicProcedure = () => {
       <div className="mt-12 text-center text-gray-400 text-xs uppercase tracking-widest">
         <p>{t.acrylic.copyright}</p>
       </div>
+
+      {/* Quick Edit Modal */}
+      <AnimatePresence>
+        {isEditing && editingStep && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-brand-text/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl relative"
+            >
+              <button onClick={() => setIsEditing(false)} className="absolute top-6 right-6 p-2 text-brand-text/30 hover:text-brand-text transition-colors">
+                <X size={24} />
+              </button>
+
+              <h3 className="text-xl font-bold mb-6 text-brand-text uppercase tracking-widest text-orange-600">
+                Edit Acrylic Step
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/40 mb-1 block">Title</label>
+                  <input 
+                    type="text"
+                    value={editingStep.title}
+                    onChange={e => setEditingStep({...editingStep, title: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-orange-400 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/40 mb-1 block">Description</label>
+                  <textarea 
+                    value={editingStep.desc}
+                    onChange={e => setEditingStep({...editingStep, desc: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-orange-400 transition-colors min-h-[80px]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/40 mb-1 block">YouTube Video URL</label>
+                  <input 
+                    type="text"
+                    value={editingStep.videoUrl || ''}
+                    onChange={e => setEditingStep({...editingStep, videoUrl: e.target.value})}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-orange-400 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button 
+                  onClick={handleSaveStep}
+                  disabled={saving}
+                  className="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold uppercase tracking-widest hover:shadow-lg hover:shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
+                >
+                  {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                  Save Changes
+                </button>
+                <button 
+                  onClick={() => setIsEditing(false)}
+                  className="px-6 py-3 border border-brand-border rounded-xl font-bold uppercase tracking-widest text-brand-text/60 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

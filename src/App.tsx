@@ -20,7 +20,26 @@ import PedicureProcedure from './components/PedicureProcedure';
 import GelXProcedure from './components/GelXProcedure';
 import AcrylicProcedure from './components/AcrylicProcedure';
 import AcrylicRefillProcedure from './components/AcrylicRefillProcedure';
+import ProcedureTemplate from './components/ProcedureTemplate';
 import YouTube from 'react-youtube';
+import HomePage from './components/HomePage';
+import LibraryPage from './components/LibraryPage';
+import ProceduresPage from './components/ProceduresPage';
+import Sidebar from './components/Sidebar';
+
+// --- Layouts ---
+
+function SharedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-brand-bg">
+      <Navbar />
+      <Sidebar />
+      <main className="lg:pl-80 pt-16 transition-all duration-300">
+        {children}
+      </main>
+    </div>
+  );
+}
 
 // --- Components ---
 
@@ -38,62 +57,24 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-brand-border z-50 flex items-center justify-between px-6">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-border z-50 flex items-center justify-between px-6">
       {/* Left: Logo */}
       <Link to="/" className="flex items-center gap-2 shrink-0">
-        <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-accent/20">
+        <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-accent/40">
           <Award size={18} />
         </div>
-        <span className="font-serif font-bold text-lg text-brand-accent tracking-[2px] uppercase hidden sm:inline">NailPro Academy</span>
+        <span className="font-serif font-bold text-lg text-brand-text tracking-[2px] uppercase hidden sm:inline">NailPro Academy</span>
       </Link>
 
-      {/* Center: Procedures Dropdown */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
-        <div className="relative group">
-          <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-1 hover:text-brand-accent transition-all">
-            <ClipboardList size={14} className="text-brand-accent" />
-            <span>{t.nav.procedures}</span>
-            <ChevronDown size={12} className="opacity-40" />
-          </button>
-          
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-48 bg-white border border-brand-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] overflow-hidden">
-             <Link 
-               to="/manicure" 
-               className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
-             >
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-accent" />
-               {t.manicure.nav}
-             </Link>
-             <Link 
-               to="/pedicure" 
-               className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
-             >
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-accent" />
-               {t.pedicure.nav}
-             </Link>
-             <Link 
-               to="/gel-x" 
-               className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
-             >
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-accent" />
-               {t.gelX.nav}
-             </Link>
-             <Link 
-               to="/acrylic" 
-               className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
-             >
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-accent" />
-               {t.acrylic.nav}
-             </Link>
-             <Link 
-               to="/refill" 
-               className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 hover:bg-brand-bg hover:text-brand-accent transition-all border-b border-brand-border last:border-0"
-             >
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-accent" />
-               {t.acrylicRefill.nav}
-             </Link>
-          </div>
-        </div>
+      {/* Center: Navigation Links */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+        <Link 
+          to="/library" 
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-2 hover:text-brand-blue transition-all"
+        >
+          <BookOpen size={14} className="text-brand-blue" />
+          <span className="hidden sm:inline">{t.nav.library}</span>
+        </Link>
       </div>
       
       {/* Right: Actions */}
@@ -101,7 +82,7 @@ function Navbar() {
         {profile?.role === 'admin' && (
           <Link 
             to="/admin" 
-            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-accent px-3 py-1 border border-brand-accent/20 rounded-lg hover:bg-brand-accent hover:text-white transition-all"
+            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-purple px-3 py-1 border border-brand-purple/20 rounded-lg hover:bg-brand-purple hover:text-white transition-all shadow-lg shadow-brand-purple/10"
           >
             <Layout size={14} className="md:hidden" />
             <span className="hidden md:inline">{t.nav.admin}</span>
@@ -112,11 +93,11 @@ function Navbar() {
           <div className="flex items-center gap-3">
             <div className="hidden lg:block text-right">
               <p className="text-xs font-bold text-brand-text">{profile?.displayName}</p>
-              <p className="text-[9px] text-brand-accent uppercase tracking-widest">{profile?.role}</p>
+              <p className="text-[9px] text-brand-purple uppercase tracking-widest">{profile?.role}</p>
             </div>
             <button 
               onClick={() => signOut(auth)}
-              className="p-2 hover:bg-brand-bg rounded-xl transition-colors text-brand-accent"
+              className="p-2 hover:bg-white/5 rounded-xl transition-colors text-brand-text/60 hover:text-brand-accent"
               title={t.nav.logout}
             >
               <LogOut size={18} />
@@ -125,22 +106,22 @@ function Navbar() {
         ) : (
           <button 
             onClick={handleLogin}
-            className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-brand-accent/20"
+            className="flex items-center gap-2 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-brand-accent/20"
           >
             <LogIn size={14} />
             <span>{t.nav.login}</span>
           </button>
         )}
 
-        {/* Language Switcher (Moved to rightmost) */}
-        <div className="flex items-center gap-1 bg-brand-bg p-1 rounded-xl border border-brand-border ml-2">
+        {/* Language Switcher */}
+        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-brand-border ml-2">
           {(['vi', 'en', 'es'] as const).map((lang) => (
             <button
               key={lang}
               onClick={() => setLanguage(lang)}
               className={cn(
                 "w-7 h-7 rounded-lg text-[10px] font-bold uppercase transition-all",
-                language === lang ? "bg-brand-accent text-white shadow-sm" : "hover:bg-white text-brand-text/40"
+                language === lang ? "bg-brand-card text-brand-text border border-brand-border shadow-md" : "hover:bg-white/5 text-brand-text/30"
               )}
             >
               {lang}
@@ -152,111 +133,28 @@ function Navbar() {
   );
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+      <div className="w-12 h-12 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin" />
+    </div>
+  );
+  if (!user || profile?.role !== 'admin') return <Navigate to="/" />;
+  return <>{children}</>;
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
-      <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+      <div className="w-12 h-12 border-4 border-brand-blue/20 border-t-brand-blue rounded-full animate-spin" />
     </div>
   );
   return user ? <>{children}</> : <Navigate to="/" />;
 }
 
 // --- Pages ---
-
-function HomePage() {
-  const { profile } = useAuth();
-  const { t } = useLanguage();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchCourses() {
-      try {
-        const coursesSnap = await getDocs(collection(db, 'courses'));
-        setCourses(coursesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)));
-      } catch (error) {
-        console.error("Fetch Courses Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCourses();
-  }, []);
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-      <div className="w-10 h-10 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin" />
-    </div>
-  );
-
-  return (
-    <div className="pt-24 pb-12 px-6 max-w-5xl mx-auto relative overflow-hidden">
-      {/* Decorative background shapes */}
-      <div className="fixed top-[-100px] right-[-100px] w-80 h-80 rounded-full border border-brand-border/30 bg-brand-secondary/5 z-[-1]" />
-      <div className="fixed bottom-[10%] left-[-50px] w-40 h-40 border border-brand-border/30 rotate-12 bg-brand-accent/5 z-[-1]" />
-
-      <header className="mb-12 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 uppercase tracking-wide">{t.home.title}</h1>
-          <div className="h-1 w-12 bg-brand-secondary rounded-full" />
-        </div>
-        {profile?.role === 'admin' && (
-          <Link to="/admin" className="md:hidden p-2 bg-brand-accent text-white rounded-xl shadow-lg flex-shrink-0">
-            <Layout size={18} />
-          </Link>
-        )}
-      </header>
-
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {courses.length > 0 ? courses.map((course, idx) => (
-          <motion.div
-            key={course.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-          >
-            <Link to={`/course/${course.id}`} className="group block h-full">
-              <div className="bg-brand-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-brand-border h-full flex flex-col">
-                <div className="relative aspect-square overflow-hidden bg-brand-border/20">
-                  <img 
-                    src={course.thumbnail} 
-                    alt={course.title} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-brand-accent/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-brand-accent shadow-lg shadow-black/5">
-                      <Play size={20} fill="currentColor" />
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 flex-1 flex flex-col">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-brand-accent mb-1">
-                    {course.category}
-                  </span>
-                  <h3 className="text-sm font-bold text-brand-text mb-2 line-clamp-1 group-hover:text-brand-accent transition-colors uppercase">
-                    {course.title}
-                  </h3>
-                  <div className="mt-auto flex items-center justify-between opacity-60">
-                    <span className="text-[9px] font-bold uppercase tracking-widest">
-                      {t.home[course.level as keyof typeof t.home]}
-                    </span>
-                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        )) : (
-          <div className="col-span-full py-20 text-center">
-             <p className="text-brand-text/40 font-serif italic">{t.home.no_courses}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function CourseDetailsPage() {
   const { courseId } = useParams();
@@ -307,48 +205,48 @@ function CourseDetailsPage() {
           {t.course.back}
         </Link>
 
-        <div className="bg-brand-white rounded-[32px] p-8 md:p-12 shadow-2xl shadow-brand-text/5 mb-10 overflow-hidden relative border border-brand-border">
+        <div className="bg-brand-card rounded-[32px] p-8 md:p-12 shadow-2xl mb-10 overflow-hidden relative border border-brand-border">
           <div className="relative z-10">
             <div className="flex items-center gap-1.5 mb-4">
-              <div className="h-1 w-8 bg-brand-secondary rounded-full" />
-              <span className="text-[10px] font-bold uppercase tracking-[2px]">{course.category}</span>
+              <div className="h-1 w-8 bg-brand-blue rounded-full" />
+              <span className="text-[10px] font-bold uppercase tracking-[2px] text-brand-blue">{course.category}</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold mb-6 max-w-2xl leading-[1.1] uppercase tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-bold mb-6 max-w-2xl leading-[1.1] uppercase tracking-tight text-white">
               {course.title}
             </h1>
-            <p className="text-brand-text/70 text-base leading-relaxed mb-10 max-w-xl">
+            <p className="text-brand-text/50 text-base leading-relaxed mb-10 max-w-xl">
               {course.description}
             </p>
             <div className="flex flex-wrap gap-4 items-center">
-              <button className="bg-brand-accent text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-wider text-xs hover:shadow-xl hover:shadow-brand-accent/20 transition-all active:scale-95">
+              <button className="bg-brand-accent text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-wider text-xs hover:shadow-xl hover:shadow-brand-accent/30 transition-all active:scale-95">
                 {t.course.start}
               </button>
-              <div className="flex items-center gap-2 text-brand-text/40 text-[10px] font-bold uppercase tracking-widest px-5 py-3 border border-brand-border rounded-2xl bg-brand-bg/50">
+              <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase tracking-widest px-5 py-3 border border-brand-border rounded-2xl bg-white/5">
                 <Play size={14} />
                 {lessons.length} {t.course.lessons}
               </div>
             </div>
           </div>
-          <div className="absolute -right-20 -bottom-20 w-80 h-80 border border-brand-border/20 rounded-full opacity-30 bg-brand-secondary/5 rotate-12" />
+          <div className="absolute -right-20 -bottom-20 w-80 h-80 border border-brand-blue/10 rounded-full opacity-30 bg-brand-blue/5 rotate-12" />
         </div>
 
         <section>
-          <h2 className="text-xl font-bold mb-8 flex items-center gap-3">
+          <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-white">
             {t.course.curriculum}
-            <span className="h-[1px] flex-1 bg-brand-border/50" />
+            <span className="h-[1px] flex-1 bg-brand-border" />
           </h2>
           <div className="space-y-4">
             {lessons.map((lesson, idx) => (
               <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
-                <div className="group bg-brand-white p-5 rounded-2xl border border-brand-border hover:border-brand-accent hover:shadow-lg transition-all flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-xl bg-brand-bg flex items-center justify-center font-bold text-brand-accent/30 group-hover:bg-brand-accent group-hover:text-brand-white transition-all transform group-hover:rotate-6">
+                <div className="group bg-brand-card p-5 rounded-2xl border border-brand-border hover:border-brand-purple hover:shadow-lg transition-all flex items-center gap-6">
+                  <div className="w-14 h-14 rounded-xl bg-brand-bg flex items-center justify-center font-bold text-white/20 group-hover:bg-brand-purple group-hover:text-white transition-all transform group-hover:rotate-6">
                     {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-sm mb-1">{lesson.title}</h4>
-                    <span className="text-[9px] text-brand-text/40 uppercase tracking-widest font-bold">15 MINS</span>
+                    <h4 className="font-bold text-sm mb-1 text-white group-hover:text-brand-purple transition-colors">{lesson.title}</h4>
+                    <span className="text-[9px] text-white/20 uppercase tracking-widest font-bold">15 MINS</span>
                   </div>
-                  <div className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-brand-border group-hover:border-brand-accent group-hover:text-brand-accent group-hover:scale-110 transition-all">
+                  <div className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-brand-border group-hover:border-brand-purple group-hover:text-brand-purple group-hover:scale-110 transition-all">
                     <Play size={14} fill="currentColor" />
                   </div>
                 </div>
@@ -412,6 +310,7 @@ function LessonPage() {
   };
 
   const getVideoId = (url: string) => {
+    if (!url) return '';
     const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(watchRegExp);
     return (match && match[2].length === 11) ? match[2] : '';
@@ -490,17 +389,17 @@ function LessonPage() {
           
           <div className="pt-10 border-t border-brand-border">
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-1.5 h-6 bg-brand-secondary rounded-full" />
-              <h3 className="font-bold text-sm uppercase tracking-widest">{t.lesson.exercises}</h3>
+              <div className="w-1.5 h-6 bg-brand-blue rounded-full" />
+              <h3 className="font-bold text-sm uppercase tracking-widest text-white">{t.lesson.exercises}</h3>
             </div>
-            <div className="bg-brand-white rounded-2xl p-6 text-brand-text/80 text-sm leading-relaxed border border-brand-border shadow-sm italic">
+            <div className="bg-white/5 rounded-2xl p-6 text-white/60 text-sm leading-relaxed border border-brand-border shadow-sm italic">
               {t.lesson.instructions}
             </div>
           </div>
         </div>
         
         {/* Geometric detail */}
-        <div className="absolute bottom-[-50px] right-[-50px] w-40 h-40 border border-brand-border/20 rounded-full bg-brand-secondary/5" />
+        <div className="absolute bottom-[-50px] right-[-50px] w-40 h-40 border border-brand-blue/20 rounded-full bg-brand-blue/5" />
       </div>
     </div>
   );
@@ -513,57 +412,65 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-[#f5f5f0] text-gray-900 selection:bg-amber-100 font-sans">
+          <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 font-sans">
             <Routes>
               <Route path="/admin" element={
-                <PrivateRoute>
+                <AdminRoute>
                    <AdminDashboard />
-                </PrivateRoute>
+                </AdminRoute>
               } />
               <Route path="/" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <HomePage />
-                </>
+                </SharedLayout>
+              } />
+              <Route path="/library" element={
+                <SharedLayout>
+                  <LibraryPage />
+                </SharedLayout>
+              } />
+              <Route path="/procedures" element={
+                <SharedLayout>
+                  <ProceduresPage />
+                </SharedLayout>
               } />
               <Route path="/course/:courseId" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <CourseDetailsPage />
-                </>
+                </SharedLayout>
               } />
               <Route path="/lesson/:lessonId" element={
                 <LessonPage />
               } />
               <Route path="/manicure" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <ManicureProcedure />
-                </>
+                </SharedLayout>
               } />
               <Route path="/pedicure" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <PedicureProcedure />
-                </>
+                </SharedLayout>
               } />
               <Route path="/gel-x" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <GelXProcedure />
-                </>
+                </SharedLayout>
               } />
               <Route path="/acrylic" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <AcrylicProcedure />
-                </>
+                </SharedLayout>
               } />
               <Route path="/refill" element={
-                <>
-                  <Navbar />
+                <SharedLayout>
                   <AcrylicRefillProcedure />
-                </>
+                </SharedLayout>
+              } />
+              <Route path="/procedure/:procedureId" element={
+                <SharedLayout>
+                  <ProcedureTemplate />
+                </SharedLayout>
               } />
             </Routes>
           </div>

@@ -39,6 +39,31 @@
         "order": { "type": "number" }
       },
       "required": ["courseId", "title", "order"]
+    },
+    "Procedure": {
+      "title": "Procedure",
+      "description": "Operating procedures for salon branches",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "translations": { "type": "object" }
+      },
+      "required": ["id"]
+    },
+    "ProcedureStep": {
+      "title": "ProcedureStep",
+      "description": "Individual step in a procedure",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "order"]
     }
   },
   "firestore": {
@@ -53,6 +78,14 @@
     "/courses/{courseId}/lessons/{lessonId}": {
       "schema": "Lesson",
       "description": "Lessons within a course"
+    },
+    "/procedures/{procedureId}": {
+      "schema": "Procedure",
+      "description": "Salon procedures"
+    },
+    "/procedures/{procedureId}/steps/{stepId}": {
+      "schema": "ProcedureStep",
+      "description": "Steps in a procedure"
     }
   }
 }
