@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter, Routes, Route, Navigate, Link, useParams, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, Link, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { Globe, LogOut, BookOpen, User, Play, ChevronRight, CheckCircle2, Award, Layout, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ClipboardList, LogIn } from 'lucide-react';
@@ -432,7 +432,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <BrowserRouter>
+        <HashRouter>
           <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 font-sans">
             <Routes>
               <Route path="/admin" element={
@@ -495,7 +495,7 @@ export default function App() {
               } />
             </Routes>
           </div>
-        </BrowserRouter>
+        </HashRouter>
       </AuthProvider>
     </LanguageProvider>
   );
