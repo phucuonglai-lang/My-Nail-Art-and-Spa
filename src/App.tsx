@@ -21,6 +21,7 @@ import GelXProcedure from './components/GelXProcedure';
 import AcrylicProcedure from './components/AcrylicProcedure';
 import AcrylicRefillProcedure from './components/AcrylicRefillProcedure';
 import ProcedureTemplate from './components/ProcedureTemplate';
+import PolicyViewer from './components/PolicyViewer';
 import YouTube from 'react-youtube';
 import HomePage from './components/HomePage';
 import LibraryPage from './components/LibraryPage';
@@ -492,6 +493,9 @@ export default function App() {
                 <SharedLayout>
                   <ProcedureTemplate />
                 </SharedLayout>
+              } />
+              <Route path="/policy/:policyId" element={
+                <PolicyViewer />
               } />
             </Routes>
           </div>

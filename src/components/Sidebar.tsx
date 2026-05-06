@@ -65,9 +65,9 @@ export default function Sidebar() {
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-20 left-4 z-50 p-3 bg-brand-card border border-brand-border rounded-2xl shadow-2xl lg:hidden text-white"
+        className="fixed top-6 left-6 z-50 p-4 bg-brand-card border border-brand-border rounded-2xl shadow-[0_16px_32px_rgba(0,0,0,0.4)] lg:hidden text-white active:scale-90 transition-transform active:bg-white/10"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Backdrop for mobile */}

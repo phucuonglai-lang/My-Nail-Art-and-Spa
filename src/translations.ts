@@ -17,6 +17,16 @@ export const translations = {
         news: 'Thông báo'
       },
     },
+    procedures: {
+      center_title: 'TRUNG TÂM QUY CHUẨN',
+      center_subtitle: 'Tài liệu quy trình kỹ thuật & quy định vận hành hệ thống.',
+      policies_title: 'QUY ĐỊNH',
+      policies_subtitle: 'Các tài liệu quy định và chính sách hoạt động.',
+      no_policies: 'Chưa có quy định nào.',
+      not_found: 'KHÔNG TÌM THẤY TÀI LIỆU',
+      official_policy: 'Văn bản chính thức',
+      internal_document: 'Tài liệu nội bộ',
+    },
     home: {
       title: 'Học Viện Nail Academy',
       subtitle: 'Xây dựng thương hiệu & Vận hành xuất sắc. Trung tâm đào tạo và chuẩn hóa quy trình cho các chi nhánh Cutler Bay, Kendall và Homestead.',
@@ -241,6 +251,16 @@ export const translations = {
         news: 'Announcements'
       },
     },
+    procedures: {
+      center_title: 'STANDARD CENTER',
+      center_subtitle: 'Technical procedures & system operation regulations documents.',
+      policies_title: 'POLICIES',
+      policies_subtitle: 'Operational regulations and policy documents.',
+      no_policies: 'No policies available.',
+      not_found: 'DOCUMENT NOT FOUND',
+      official_policy: 'Official Policy',
+      internal_document: 'Internal document',
+    },
     home: {
       title: 'Nail Academy Hub',
       subtitle: 'Brand Building & Operational Excellence. Training and process standardization for Cutler Bay, Kendall, and Homestead branches.',
@@ -463,6 +483,16 @@ export const translations = {
         rules: 'Reglas del Salón',
         news: 'Anuncios'
       },
+    },
+    procedures: {
+      center_title: 'CENTRO DE ESTÁNDARES',
+      center_subtitle: 'Documentos de procedimientos técnicos y regulaciones de operación.',
+      policies_title: 'POLÍTICAS',
+      policies_subtitle: 'Documentos de reglamentos operativos y políticas.',
+      no_policies: 'No hay políticas disponibles.',
+      not_found: 'DOCUMENTO NO ENCONTRADO',
+      official_policy: 'Política Oficial',
+      internal_document: 'Documento interno',
     },
     home: {
       title: 'Academia Nail Hub',

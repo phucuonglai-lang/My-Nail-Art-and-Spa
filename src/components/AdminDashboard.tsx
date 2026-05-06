@@ -872,7 +872,15 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {procedures.length > 0 ? procedures.map(proc => (
-                <div key={proc.id} className="bg-brand-card p-8 rounded-[40px] border border-brand-border hover:border-brand-purple/50 shadow-2xl transition-all group relative overflow-hidden">
+                <div 
+                  key={proc.id} 
+                  onClick={() => {
+                    setSelectedProcedureId(proc.id); 
+                    setView('steps'); 
+                    fetchSteps(proc.id); 
+                  }}
+                  className="bg-brand-card p-8 rounded-[40px] border border-brand-border hover:border-brand-purple/50 shadow-2xl transition-all group relative overflow-hidden cursor-pointer"
+                >
                   <div className="flex items-center justify-between mb-8 relative z-10">
                     <div className={cn("w-16 h-16 rounded-[24px] bg-white/5 flex items-center justify-center shadow-inner", proc.color)}>
                       <ClipboardList size={32} />
@@ -885,14 +893,17 @@ export default function AdminDashboard() {
                            setView('steps'); 
                            fetchSteps(proc.id); 
                          }}
-                         className="w-12 h-12 bg-white/5 text-brand-purple hover:bg-brand-purple hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         className="w-12 h-12 bg-white/5 text-brand-purple hover:bg-brand-purple hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg pointer-events-auto"
                          title="Manage Steps"
                        >
                          <Settings size={20} />
                        </button>
                        <button 
-                         onClick={() => handleEditProcedure(proc)}
-                         className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleEditProcedure(proc);
+                         }}
+                         className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg pointer-events-auto"
                          title="Edit Procedure"
                        >
                          <Edit2 size={20} />
@@ -902,7 +913,7 @@ export default function AdminDashboard() {
                            e.stopPropagation();
                            handleDeleteProcedure(proc.id);
                          }}
-                         className="w-12 h-12 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
+                         className="w-12 h-12 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg pointer-events-auto"
                          title="Xóa"
                        >
                          <Trash2 size={20} />

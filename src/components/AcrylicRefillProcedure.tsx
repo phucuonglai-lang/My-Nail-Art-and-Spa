@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { collection, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { ProcedureStep } from '../types';
 import YouTube from 'react-youtube';
 
@@ -36,13 +37,15 @@ const AcrylicRefillProcedure = () => {
   const fetchData = async () => {
     try {
       const q = query(collection(db, 'procedures', 'refill', 'steps'), orderBy('order'));
-      const snap = await getDocs(q);
+      const snap = await getDocs(q).catch(err => {
+        handleFirestoreError(err, OperationType.LIST, 'procedures/refill/steps');
+        return { empty: true, docs: [] };
+      });
       if (!snap.empty) {
         setDbSteps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProcedureStep)));
       }
     } catch (error) {
       console.error("Fetch Refill Steps Error:", error);
-      // Fallback remains to static translations handled in getPhaseSteps
     }
   };
 
@@ -52,9 +55,9 @@ const AcrylicRefillProcedure = () => {
 
   const getVideoId = (url: string) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    return (match && match[1].length === 11) ? match[1] : url.length === 11 ? url : '';
   };
 
   const getPhaseSteps = (stepIndices: number[]) => {
