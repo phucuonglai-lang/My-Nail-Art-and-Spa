@@ -83,7 +83,7 @@ export default function ProceduresPage() {
           {procedures.length > 0 ? procedures.map((proc, idx) => {
             const knownIds = ['manicure', 'pedicure', 'gel-x', 'acrylic', 'refill'];
             const path = knownIds.includes(proc.id) ? `/${proc.id}` : `/procedure/${proc.id}`;
-            const name = proc.translations?.[language]?.nav || proc.id;
+            const name = proc.translations?.[language]?.nav || proc.translations?.vi?.nav || proc.id;
 
             return (
               <motion.div
@@ -156,14 +156,14 @@ export default function ProceduresPage() {
                 
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-sm text-white truncate uppercase tracking-widest group-hover:text-brand-purple transition-colors">{title}</h3>
-                  <p className="text-[10px] text-white/20 font-bold uppercase tracking-[2px] mt-1.5">{policy.type} doc</p>
+                  <p className="text-[10px] text-white/20 font-bold uppercase tracking-[2px] mt-1.5">{policy.type.toUpperCase()} DOCUMENT</p>
                 </div>
 
                 {policy.type === 'html' ? (
                   <button 
                     onClick={() => openHtmlInNewTab(content || '')}
                     className="w-10 h-10 bg-white/5 text-brand-purple rounded-xl hover:bg-brand-purple hover:text-white transition-all shadow-xl flex items-center justify-center"
-                    title="Mở trong tab mới"
+                    title={t.nav.back}
                   >
                     <ExternalLink size={16} />
                   </button>
@@ -181,7 +181,7 @@ export default function ProceduresPage() {
             );
           }) : (
             <div className="col-span-full py-20 text-center bg-white/5 rounded-[40px] border border-dashed border-brand-border">
-               <p className="text-white/10 italic text-sm uppercase tracking-widest font-bold">Chưa có quy định nào.</p>
+               <p className="text-white/10 italic text-sm uppercase tracking-widest font-bold">{t.procedures.no_policies}</p>
             </div>
           )}
         </div>

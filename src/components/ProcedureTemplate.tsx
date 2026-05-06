@@ -147,13 +147,17 @@ const ProcedureTemplate: React.FC<ProcedureTemplateProps> = ({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-bold text-xl text-white uppercase tracking-tight group-hover:text-brand-accent transition-colors">{step.title}</h3>
+                        <h3 className="font-bold text-xl text-white uppercase tracking-tight group-hover:text-brand-accent transition-colors">
+                          {step.translations?.[language]?.title || step.title}
+                        </h3>
                         <CheckCircle2 className={cn(
                           "w-6 h-6 transition-all duration-500",
                           isActive ? "opacity-100 scale-125 text-emerald-500" : "opacity-0 group-hover:opacity-10"
                         )} />
                       </div>
-                      <p className="text-white/40 leading-relaxed text-sm font-medium">{step.desc}</p>
+                      <p className="text-white/40 leading-relaxed text-sm font-medium">
+                        {step.translations?.[language]?.desc || step.desc}
+                      </p>
                       
                       {isActive && videoId && (
                         <motion.div 

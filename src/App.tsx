@@ -180,7 +180,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function CourseDetailsPage() {
   const { courseId } = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,10 +234,10 @@ function CourseDetailsPage() {
               <span className="text-[10px] font-bold uppercase tracking-[2px] text-brand-blue">{course.category}</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-bold mb-6 max-w-2xl leading-[1.1] uppercase tracking-tight text-white">
-              {course.title}
+              {course.translations?.[language]?.title || course.title}
             </h1>
             <p className="text-brand-text/50 text-base leading-relaxed mb-10 max-w-xl">
-              {course.description}
+              {course.translations?.[language]?.description || course.description}
             </p>
             <div className="flex flex-wrap gap-4 items-center">
               <button className="bg-brand-accent text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-wider text-xs hover:shadow-xl hover:shadow-brand-accent/30 transition-all active:scale-95">
@@ -258,22 +258,25 @@ function CourseDetailsPage() {
             <span className="h-[1px] flex-1 bg-brand-border" />
           </h2>
           <div className="space-y-4">
-            {lessons.map((lesson, idx) => (
-              <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
-                <div className="group bg-brand-card p-5 rounded-2xl border border-brand-border hover:border-brand-purple hover:shadow-lg transition-all flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-xl bg-brand-bg flex items-center justify-center font-bold text-white/20 group-hover:bg-brand-purple group-hover:text-white transition-all transform group-hover:rotate-6">
-                    {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+            {lessons.map((lesson, idx) => {
+              const lessonTitle = lesson.translations?.[language]?.title || lesson.title;
+              return (
+                <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
+                  <div className="group bg-brand-card p-5 rounded-2xl border border-brand-border hover:border-brand-purple hover:shadow-lg transition-all flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-xl bg-brand-bg flex items-center justify-center font-bold text-white/20 group-hover:bg-brand-purple group-hover:text-white transition-all transform group-hover:rotate-6">
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm mb-1 text-white group-hover:text-brand-purple transition-colors">{lessonTitle}</h4>
+                      <span className="text-[9px] text-white/20 uppercase tracking-widest font-bold">15 MINS</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-brand-border group-hover:border-brand-purple group-hover:text-brand-purple group-hover:scale-110 transition-all">
+                      <Play size={14} fill="currentColor" />
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm mb-1 text-white group-hover:text-brand-purple transition-colors">{lesson.title}</h4>
-                    <span className="text-[9px] text-white/20 uppercase tracking-widest font-bold">15 MINS</span>
-                  </div>
-                  <div className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-brand-border group-hover:border-brand-purple group-hover:text-brand-purple group-hover:scale-110 transition-all">
-                    <Play size={14} fill="currentColor" />
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       </div>
@@ -283,7 +286,7 @@ function CourseDetailsPage() {
 
 function LessonPage() {
   const { lessonId } = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
@@ -404,9 +407,11 @@ function LessonPage() {
             {t.lesson.back}
           </Link>
           
-          <h1 className="text-2xl font-bold mb-4 tracking-tight leading-tight uppercase tracking-wide">{lesson.title}</h1>
+          <h1 className="text-2xl font-bold mb-4 tracking-tight leading-tight uppercase tracking-wide">
+            {lesson.translations?.[language]?.title || lesson.title}
+          </h1>
           <div className="prose prose-sm prose-stone text-brand-text/70 leading-relaxed mb-12">
-            <p>{lesson.content}</p>
+            <p>{lesson.translations?.[language]?.content || lesson.content}</p>
           </div>
           
           <div className="pt-10 border-t border-brand-border">

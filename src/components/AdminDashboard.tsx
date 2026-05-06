@@ -244,27 +244,32 @@ export default function AdminDashboard() {
     if (!newProcedure.id) return;
     try {
       const docId = newProcedure.id.toLowerCase().replace(/\s+/g, '-');
-      const procedureData = {
-        ...newProcedure,
-        id: docId,
-        translations: {
-          [language]: {
-            nav: newProcedure.id,
-            title: newProcedure.id.toUpperCase(),
-            subtitle: 'Procedure Details',
-            steps: {}
-          }
+      
+      const existingTranslations = newProcedure.translations || {};
+      const updatedTranslations = {
+        ...existingTranslations,
+        [formLanguage]: {
+          nav: newProcedure.id,
+          title: newProcedure.title || newProcedure.id.toUpperCase(),
+          subtitle: newProcedure.subtitle || 'Procedure Details',
+          steps: existingTranslations[formLanguage]?.steps || {}
         }
       };
 
+      const procedureData = {
+        ...newProcedure,
+        id: docId,
+        translations: updatedTranslations
+      };
+
       if (editingProcedureId) {
-        await updateDoc(doc(db, 'procedures', editingProcedureId), newProcedure);
+        await updateDoc(doc(db, 'procedures', editingProcedureId), procedureData);
       } else {
         await setDoc(doc(db, 'procedures', docId), procedureData);
       }
       setIsAdding(false);
       setEditingProcedureId(null);
-      setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent', difficulty: 'Normal' });
+      setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent', difficulty: 'Normal', translations: {} });
       fetchData();
     } catch (error) {
       alert("Error saving procedure: " + (error instanceof Error ? error.message : String(error)));
@@ -280,17 +285,31 @@ export default function AdminDashboard() {
     };
 
     try {
+      const existingTranslations = newStep.translations || {};
+      const updatedTranslations = {
+        ...existingTranslations,
+        [formLanguage]: {
+          title: newStep.title || '',
+          desc: newStep.desc || ''
+        }
+      };
+
+      const stepData = {
+        ...processedStep,
+        translations: updatedTranslations
+      };
+
       if (editingStepId) {
-        await updateDoc(doc(db, 'procedures', selectedProcedureId, 'steps', editingStepId), processedStep);
+        await updateDoc(doc(db, 'procedures', selectedProcedureId, 'steps', editingStepId), stepData);
       } else {
         await addDoc(collection(db, 'procedures', selectedProcedureId, 'steps'), {
-          ...processedStep,
+          ...stepData,
           order: steps.length + 1
         });
       }
       setIsAdding(false);
       setEditingStepId(null);
-      setNewStep({ title: '', desc: '', videoUrl: '', order: steps.length + 1 });
+      setNewStep({ title: '', desc: '', videoUrl: '', order: steps.length + 1, translations: {} });
       fetchSteps(selectedProcedureId);
     } catch (error) {
       alert("Error saving step");
@@ -520,14 +539,28 @@ export default function AdminDashboard() {
   const handleAddCourse = async () => {
     if (!newCourse.title || !newCourse.description) return;
     try {
+      const existingTranslations = newCourse.translations || {};
+      const updatedTranslations = {
+        ...existingTranslations,
+        [formLanguage]: {
+          title: newCourse.title || '',
+          description: newCourse.description || ''
+        }
+      };
+
+      const courseData = {
+        ...newCourse,
+        translations: updatedTranslations
+      };
+
       if (editingCourseId) {
-        await updateDoc(doc(db, 'courses', editingCourseId), newCourse);
+        await updateDoc(doc(db, 'courses', editingCourseId), courseData);
       } else {
-        await addDoc(collection(db, 'courses'), newCourse);
+        await addDoc(collection(db, 'courses'), courseData);
       }
       setIsAdding(false);
       setEditingCourseId(null);
-      setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
+      setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner', translations: {} });
       fetchData();
     } catch (error) {
       alert("Lỗi khi lưu khóa học");
@@ -560,20 +593,34 @@ export default function AdminDashboard() {
     };
 
     try {
+      const existingTranslations = newLesson.translations || {};
+      const updatedTranslations = {
+        ...existingTranslations,
+        [formLanguage]: {
+          title: newLesson.title || '',
+          content: newLesson.content || ''
+        }
+      };
+
+      const lessonData = {
+        ...processedLesson,
+        translations: updatedTranslations
+      };
+
       if (editingLessonId) {
         // Update existing
-        await updateDoc(doc(db, 'courses', selectedCourseId, 'lessons', editingLessonId), processedLesson);
+        await updateDoc(doc(db, 'courses', selectedCourseId, 'lessons', editingLessonId), lessonData);
       } else {
         // Create new
         await addDoc(collection(db, 'courses', selectedCourseId, 'lessons'), {
-          ...processedLesson,
+          ...lessonData,
           courseId: selectedCourseId,
           order: lessons.length + 1
         });
       }
       setIsAdding(false);
       setEditingLessonId(null);
-      setNewLesson({ title: '', videoUrl: '', content: '', order: lessons.length + 1 });
+      setNewLesson({ title: '', videoUrl: '', content: '', order: lessons.length + 1, translations: {} });
       fetchLessons(selectedCourseId);
     } catch (error) {
       alert("Error saving lesson");
@@ -582,23 +629,27 @@ export default function AdminDashboard() {
 
   const handleEditLesson = (lesson: Lesson) => {
     setNewLesson({
-      title: lesson.title,
+      title: lesson.translations?.[language]?.title || lesson.title,
       videoUrl: lesson.videoUrl,
-      content: lesson.content,
-      order: lesson.order
+      content: lesson.translations?.[language]?.content || lesson.content,
+      order: lesson.order,
+      translations: lesson.translations || {}
     });
+    setFormLanguage(language);
     setEditingLessonId(lesson.id);
     setIsAdding(true);
   };
 
   const handleEditCourse = (course: Course) => {
     setNewCourse({
-      title: course.title,
-      description: course.description,
+      title: course.translations?.[language]?.title || course.title,
+      description: course.translations?.[language]?.description || course.description,
       thumbnail: course.thumbnail,
       category: course.category,
-      level: course.level
+      level: course.level,
+      translations: course.translations || {}
     });
+    setFormLanguage(language);
     setEditingCourseId(course.id);
     setIsAdding(true);
   };
@@ -608,8 +659,12 @@ export default function AdminDashboard() {
       id: proc.id,
       icon: proc.icon,
       color: proc.color,
-      difficulty: proc.difficulty
+      difficulty: proc.difficulty,
+      title: proc.translations?.[language]?.title || '',
+      subtitle: proc.translations?.[language]?.subtitle || '',
+      translations: proc.translations || {}
     });
+    setFormLanguage(language);
     setEditingProcedureId(proc.id);
     setIsAdding(true);
   };
@@ -1007,7 +1062,14 @@ export default function AdminDashboard() {
                     <button 
                       onClick={() => {
                         setEditingStepId(step.id);
-                        setNewStep({ title: step.title, desc: step.desc, videoUrl: step.videoUrl, order: step.order });
+                        setNewStep({ 
+                          title: step.translations?.[language]?.title || step.title, 
+                          desc: step.translations?.[language]?.desc || step.desc, 
+                          videoUrl: step.videoUrl, 
+                          order: step.order,
+                          translations: step.translations || {}
+                        });
+                        setFormLanguage(language);
                         setIsAdding(true);
                       }}
                       className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
@@ -1080,16 +1142,26 @@ export default function AdminDashboard() {
                        </button>
                     </div>
                   </div>
-                  <h3 className="font-bold text-lg text-white uppercase tracking-tight mb-4 relative z-10">{policy.title}</h3>
+                  <h3 className="font-bold text-lg text-white uppercase tracking-tight mb-4 relative z-10">
+                    {policy.translations?.[language]?.title || policy.title}
+                  </h3>
                   <div className="flex items-center gap-4 relative z-10 mt-auto">
                     <span className="text-[10px] font-black uppercase tracking-[3px] px-3 py-1 bg-white/5 rounded-full text-white/40">
-                      {policy.type} File
+                      {policy.type.toUpperCase()}
                     </span>
-                    {policy.url && (
-                      <a href={policy.url} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-[3px] text-brand-blue hover:text-white transition-colors flex items-center gap-2">
-                        <Globe size={12} /> External Access
-                      </a>
-                    )}
+                    <div className="flex gap-1.5 grayscale opacity-30">
+                      {['vi', 'en', 'es'].map(lang => (
+                        <div 
+                          key={lang} 
+                          className={cn(
+                            "w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-black border",
+                            policy.translations?.[lang] ? "bg-brand-accent/20 border-brand-accent/40 text-brand-accent grayscale-0 opacity-100" : "border-white/10 text-white/10"
+                          )}
+                        >
+                          {lang.toUpperCase()}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )) : null}
@@ -1149,6 +1221,37 @@ export default function AdminDashboard() {
                 <div className="space-y-8 overflow-y-auto flex-1 pr-2 scrollbar-hide">
                   {view === 'courses' && (
                     <>
+                      {/* Language Switcher for Form */}
+                      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
+                        {(['vi', 'en', 'es'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              const currentTranslations = newCourse.translations || {};
+                              setNewCourse({
+                                ...newCourse,
+                                translations: {
+                                  ...currentTranslations,
+                                  [formLanguage]: {
+                                    title: newCourse.title || '',
+                                    description: newCourse.description || ''
+                                  }
+                                },
+                                title: currentTranslations[lang]?.title || '',
+                                description: currentTranslations[lang]?.description || ''
+                              });
+                              setFormLanguage(lang);
+                            }}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] transition-all",
+                              formLanguage === lang ? "bg-white text-brand-text shadow-xl" : "text-white/20 hover:text-white/40"
+                            )}
+                          >
+                            {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : 'Español'}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.course_name}</label>
                         <input 
@@ -1224,6 +1327,37 @@ export default function AdminDashboard() {
 
                   {view === 'lessons' && (
                     <>
+                      {/* Language Switcher for Form */}
+                      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
+                        {(['vi', 'en', 'es'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              const currentTranslations = newLesson.translations || {};
+                              setNewLesson({
+                                ...newLesson,
+                                translations: {
+                                  ...currentTranslations,
+                                  [formLanguage]: {
+                                    title: newLesson.title || '',
+                                    content: newLesson.content || ''
+                                  }
+                                },
+                                title: currentTranslations[lang]?.title || '',
+                                content: currentTranslations[lang]?.content || ''
+                              });
+                              setFormLanguage(lang);
+                            }}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] transition-all",
+                              formLanguage === lang ? "bg-white text-brand-text shadow-xl" : "text-white/20 hover:text-white/40"
+                            )}
+                          >
+                            {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : 'Español'}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.lesson_title}</label>
                         <input 
@@ -1272,6 +1406,39 @@ export default function AdminDashboard() {
 
                   {view === 'procedures' && (
                     <>
+                      {/* Language Switcher for Form */}
+                      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
+                        {(['vi', 'en', 'es'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              const currentTranslations = (newProcedure as any).translations || {};
+                              setNewProcedure({
+                                ...newProcedure,
+                                translations: {
+                                  ...currentTranslations,
+                                  [formLanguage]: {
+                                    nav: newProcedure.id,
+                                    title: (newProcedure as any).title || '',
+                                    subtitle: (newProcedure as any).subtitle || '',
+                                    steps: currentTranslations[formLanguage]?.steps || {}
+                                  }
+                                },
+                                title: currentTranslations[lang]?.title || '',
+                                subtitle: currentTranslations[lang]?.subtitle || ''
+                              } as any);
+                              setFormLanguage(lang);
+                            }}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] transition-all",
+                              formLanguage === lang ? "bg-white text-brand-text shadow-xl" : "text-white/20 hover:text-white/40"
+                            )}
+                          >
+                            {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : 'Español'}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.procedure_id}</label>
                         <input 
@@ -1279,7 +1446,30 @@ export default function AdminDashboard() {
                           value={newProcedure.id} 
                           onChange={e => setNewProcedure({...newProcedure, id: e.target.value})}
                           placeholder="e.g., gel-nails"
-                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-black uppercase transition-all"
+                          disabled={!!editingProcedureId}
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-black uppercase transition-all disabled:opacity-50"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Title ({formLanguage})</label>
+                        <input 
+                          type="text" 
+                          value={(newProcedure as any).title || ''} 
+                          onChange={e => setNewProcedure({...newProcedure, title: e.target.value})}
+                          placeholder="e.g., Gel Nails Procedure"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Subtitle ({formLanguage})</label>
+                        <input 
+                          type="text" 
+                          value={(newProcedure as any).subtitle || ''} 
+                          onChange={e => setNewProcedure({...newProcedure, subtitle: e.target.value})}
+                          placeholder="Summary of process"
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-6">
@@ -1323,6 +1513,37 @@ export default function AdminDashboard() {
 
                   {view === 'steps' && (
                     <>
+                      {/* Language Switcher for Form */}
+                      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
+                        {(['vi', 'en', 'es'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              const currentTranslations = newStep.translations || {};
+                              setNewStep({
+                                ...newStep,
+                                translations: {
+                                  ...currentTranslations,
+                                  [formLanguage]: {
+                                    title: newStep.title || '',
+                                    desc: newStep.desc || ''
+                                  }
+                                },
+                                title: currentTranslations[lang]?.title || '',
+                                desc: currentTranslations[lang]?.desc || ''
+                              });
+                              setFormLanguage(lang);
+                            }}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] transition-all",
+                              formLanguage === lang ? "bg-white text-brand-text shadow-xl" : "text-white/20 hover:text-white/40"
+                            )}
+                          >
+                            {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : 'Español'}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.step_title}</label>
                         <input 

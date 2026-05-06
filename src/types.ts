@@ -16,6 +16,12 @@ export interface Course {
   thumbnail: string;
   category: string;
   level: 'beginner' | 'intermediate' | 'advanced';
+  translations?: {
+    [key: string]: {
+      title: string;
+      description: string;
+    }
+  };
 }
 
 export interface Lesson {
@@ -25,6 +31,12 @@ export interface Lesson {
   videoUrl: string;
   content: string;
   order: number;
+  translations?: {
+    [key: string]: {
+      title: string;
+      content: string;
+    }
+  };
 }
 
 export interface ProcedureStep {
@@ -33,6 +45,12 @@ export interface ProcedureStep {
   desc: string;
   videoUrl?: string;
   order: number;
+  translations?: {
+    [key: string]: {
+      title: string;
+      desc: string;
+    }
+  };
 }
 
 export interface Procedure {
