@@ -128,6 +128,7 @@ export default function AdminDashboard() {
   const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
+  const [formLanguage, setFormLanguage] = useState<Language>('vi');
 
   // Form states
   const [isAdding, setIsAdding] = useState(false);
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
     title: '', desc: '', videoUrl: '', order: 1
   });
   const [newPolicy, setNewPolicy] = useState<Partial<Policy>>({
-    title: '', type: 'pdf', url: '', content: ''
+    title: '', type: 'pdf', url: '', content: '', translations: {}
   });
   const [uploading, setUploading] = useState(false);
 
@@ -414,8 +415,19 @@ export default function AdminDashboard() {
   const handleAddPolicy = async () => {
     if (!newPolicy.title) return;
     try {
+      // Ensure translations object exists
+      const existingTranslations = newPolicy.translations || {};
+      const updatedTranslations = {
+        ...existingTranslations,
+        [formLanguage]: {
+          title: newPolicy.title || '',
+          content: newPolicy.content || ''
+        }
+      };
+
       const policyData = {
         ...newPolicy,
+        translations: updatedTranslations,
         updatedAt: serverTimestamp()
       };
 
@@ -429,7 +441,7 @@ export default function AdminDashboard() {
       }
       setIsAdding(false);
       setEditingPolicyId(null);
-      setNewPolicy({ title: '', type: 'pdf', url: '', content: '' });
+      setNewPolicy({ title: '', type: 'pdf', url: '', content: '', translations: {} });
       setUploading(false);
       fetchData();
     } catch (error) {
@@ -489,7 +501,8 @@ export default function AdminDashboard() {
     setNewLesson({ title: '', videoUrl: '', content: '', order: 0 });
     setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent' });
     setNewStep({ title: '', desc: '', videoUrl: '', order: 0 });
-    setNewPolicy({ title: '', type: 'pdf', url: '', content: '' });
+    setNewPolicy({ title: '', type: 'pdf', url: '', content: '', translations: {} });
+    setFormLanguage('vi');
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -1043,7 +1056,14 @@ export default function AdminDashboard() {
                        <button 
                          onClick={() => {
                            setEditingPolicyId(policy.id);
-                           setNewPolicy({ title: policy.title, type: policy.type, url: policy.url, content: policy.content });
+                           setFormLanguage(language);
+                           setNewPolicy({ 
+                             title: policy.translations?.[language]?.title || policy.title, 
+                             type: policy.type, 
+                             url: policy.url, 
+                             content: policy.translations?.[language]?.content || policy.content,
+                             translations: policy.translations || {}
+                           });
                            setIsAdding(true);
                          }}
                          className="w-12 h-12 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-lg"
@@ -1351,13 +1371,48 @@ export default function AdminDashboard() {
 
                   {view === 'policies' && (
                     <>
+                      {/* Language Switcher for Form */}
+                      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
+                        {(['vi', 'en', 'es'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              // Save current edits to translations before switching
+                              const currentTranslations = newPolicy.translations || {};
+                              setNewPolicy({
+                                ...newPolicy,
+                                translations: {
+                                  ...currentTranslations,
+                                  [formLanguage]: {
+                                    title: newPolicy.title || '',
+                                    content: newPolicy.content || ''
+                                  }
+                                },
+                                // Load new language data into main fields
+                                title: currentTranslations[lang]?.title || '',
+                                content: currentTranslations[lang]?.content || ''
+                              });
+                              setFormLanguage(lang);
+                            }}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] transition-all",
+                              formLanguage === lang ? "bg-white text-brand-text shadow-xl" : "text-white/20 hover:text-white/40"
+                            )}
+                          >
+                            {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : 'Español'}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Tên tài liệu / Chính sách</label>
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">
+                          {formLanguage === 'vi' ? 'Tên (Tiếng Việt)' : formLanguage === 'en' ? 'Title (English)' : 'Título (Español)'}
+                        </label>
                         <input 
                           type="text" 
                           value={newPolicy.title} 
                           onChange={e => setNewPolicy({...newPolicy, title: e.target.value})}
-                          placeholder="Quy định nghỉ phép..."
+                          placeholder="Untitled Policy"
                           className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all"
                         />
                       </div>

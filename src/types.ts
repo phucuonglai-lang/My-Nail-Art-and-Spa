@@ -68,6 +68,12 @@ export interface Policy {
   type: 'pdf' | 'doc' | 'html';
   url?: string;
   content?: string; // For HTML type
+  translations?: {
+    [key: string]: {
+      title: string;
+      content: string;
+    }
+  };
   createdAt: any;
   updatedAt: any;
 }

@@ -20,8 +20,8 @@ export const translations = {
     procedures: {
       center_title: 'TRUNG TÂM QUY CHUẨN',
       center_subtitle: 'Tài liệu quy trình kỹ thuật & quy định vận hành hệ thống.',
-      policies_title: 'QUY ĐỊNH',
-      policies_subtitle: 'Các tài liệu quy định và chính sách hoạt động.',
+      policies_title: 'QUY ĐỊNH & CHÍNH SÁCH',
+      policies_subtitle: 'Các tài liệu quy định và chính sách hoạt động của tiệm.',
       no_policies: 'Chưa có quy định nào.',
       not_found: 'KHÔNG TÌM THẤY TÀI LIỆU',
       official_policy: 'Văn bản chính thức',
@@ -497,7 +497,7 @@ export const translations = {
     home: {
       title: 'Academia Nail Hub',
       subtitle: 'Construcción de Marca y Excelencia Operativa. Estandarización de procesos para las sucursales de Cutler Bay, Kendall y Homestead.',
-      no_courses: 'No hay cursos disponibles aún. Inicia sesión como Admin để thêm.',
+      no_courses: 'No hay cursos disponibles aún. Inicia sesión como Admin para añadir.',
       beginner: 'Básico',
       intermediate: 'Intermedio',
       advanced: 'Avanzado',
@@ -513,16 +513,16 @@ export const translations = {
     lesson: {
       back: 'Volver al curso',
       exercises: 'Ejercicios prácticos',
-      instructions: 'Toma una foto de tu resultado và gửi cho người hướng dẫn để nhận xét.',
+      instructions: 'Toma una foto de tu resultado y envíala al instructor para recibir comentarios.',
       not_found: 'Lección no encontrada.',
     },
     login: {
-      title: 'NailPro Academy',
-      desc: 'Únete a nuestra comunidad y comienza tu viaje để trở thành chuyên viên làm móng chuyên nghiệp ngay hôm nay.',
+      title: 'Academia NailPro',
+      desc: 'Únete a nuestra comunidad y comienza tu viaje para convertirte en un especialista en uñas hoy mismo.',
       continue: 'Continuar con Google',
       processing: 'Procesando...',
-      error_popup: 'El navegador bloqueó la ventana de inicio de sesión. Por favor, habilita las ventanas emergentes và thử lại.',
-      error_generic: 'No se pudo iniciar sesión. Por favor, verifica tu conexión và thử lại sau.',
+      error_popup: 'El navegador bloqueó la ventana de inicio de sesión. Por favor, habilita las ventanas emergentes e inténtalo de nuevo.',
+      error_generic: 'No se pudo iniciar sesión. Por favor, verifica tu conexión e inténtalo de nuevo más tarde.',
       cancel: 'Inicio de sesión cancelado por el usuario.',
     },
     admin: {
@@ -560,6 +560,7 @@ export const translations = {
       delete_confirm_procedure: '¿Eliminar este procedimiento?',
       delete_confirm_step: '¿Eliminar este paso?',
       manage_steps: 'Gestionar Pasos',
+      cancel: 'Cancelar',
     },
     manicure: {
       nav: 'Proceso de Manicura',
@@ -595,7 +596,7 @@ export const translations = {
       warning_callus_title: 'Advertencia Callus Remover',
       warning_callus_desc: 'La solución removedora de callos puede causar quemaduras. Es obligatorio enjuagar con agua 100% limpia después del uso.',
       tips_massage_title: 'Toallas Calientes y Relax',
-      tips_massage_desc: 'Limpiar la crema de masaje con toallas calientes (Paso 7). Luego usar Alcohol (Paso 8) để khử dầu móng trước khi sơn.',
+      tips_massage_desc: 'Limpie la crema de masaje con toallas calientes (Paso 7). Luego use Alcohol (Paso 8) para deshidratar la uña antes de esmaltar.',
       copyright: '© 2026 My Nail Art & Spa - Solo para capacitación interna',
       phases: {
         prep: 'FASE 1: PREPARACIÓN (PREP)',
@@ -610,7 +611,7 @@ export const translations = {
         s5: { title: "5. Pulir", desc: "Crear textura para la adhesión del esmalte (cambiar buffer viejo)." },
         s6: { title: "6. Eliminar Callos", desc: "Usar Callus Remover. EL ENJUAGUE ES OBLIGATORIO para evitar quemaduras." },
         s7: { title: "7. Masaje (5-10 min)", desc: "Relajar los pies del cliente y usar toallas calientes." },
-        s8: { title: "8. Preparación Alcohol", desc: "Rociar alcohol để khử dầu và kiểm tra da sót." },
+        s8: { title: "8. Preparación Alcohol", desc: "Rociar alcohol para deshidratar y verificar si queda piel." },
         s9: { title: "9. Esmaltar (1-2-1)", desc: "1 Base - 2 Color - 1 Top." },
         s10: { title: "10. Revisión Final", desc: "Inspeccionar todo antes de que el cliente se levante." }
       }
@@ -622,7 +623,7 @@ export const translations = {
       tips_selection_title: 'Nota de Tamaño (Paso 2)',
       tips_selection_desc: 'Nunca elija un tip más pequeño que la uña natural. Si es grande, lime los lados para un ajuste perfecto.',
       tips_prep_title: 'Técnica de Pulido (Paso 3)',
-      tips_prep_desc: 'Use una banda de lijado de grano 80 para máxima adhesión. Este là el secreto para evitar que se levante.',
+      tips_prep_desc: 'Use una banda de lijado de grano 80 para máxima adhesión. Este es el secreto para evitar que se levante.',
       copyright: '© 2026 My Nail Art & Spa - Gel X Specialist Training',
       phases: {
         prep: 'FASE 1: PREP Y TAMAÑO',
@@ -664,7 +665,7 @@ export const translations = {
         s3: { title: "3. Tamaño y Pegar Tips", desc: "Los tips deben encajar de lado a lado. Mezlcar unión." },
         s4: { title: "4. Cortar y Dar Forma", desc: "Cortar longitud y limar la forma del tip solicitada." },
         s5: { title: "5. Aplicar Primer", desc: "Agente de unión para asegurar que el acrílico se pegue." },
-        s6: { title: "6. Aplicación Gel Glue", desc: "Aplicar gel al tip, presionar và hơ đèn cố định." },
+        s6: { title: "6. Aplicación de Polvo/Gel", desc: "Aplicar el material al tip, presionar y curar con lámpara." },
         s7: { title: "7. Taladrado de Cutícula", desc: "Usa punta Diamond, seguida de banda 100/120." },
         s8: { title: "8. Pulir", desc: "Suavizar la superficie del acrílico antes de esmaltar." },
         s9: { title: "9. Lavar Manos", desc: "El cliente se lava el polvo después de limar." },
