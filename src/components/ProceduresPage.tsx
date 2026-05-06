@@ -14,9 +14,23 @@ export default function ProceduresPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Hàm tạo một đường link ảo từ mã HTML và mở nó ở tab mới
+  // Hàm tạo một đường link ảo từ mã HTML và mở nó ở tab mới (Hỗ trợ tốt cho Mobile)
   const openHtmlInNewTab = (content: string) => {
-    const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+    let finalContent = content;
+    
+    // Tự động chèn thẻ meta viewport để tối ưu hiển thị trên điện thoại
+    if (!finalContent.includes('viewport')) {
+      const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
+      if (finalContent.includes('<head>')) {
+        finalContent = finalContent.replace('<head>', '<head>' + viewportTag);
+      } else if (finalContent.includes('<html')) {
+        finalContent = finalContent.replace(/<html[^>]*>/, match => match + '<head>' + viewportTag + '</head>');
+      } else {
+        finalContent = `<!DOCTYPE html><html><head>${viewportTag}<style>body{margin:0;padding:0;box-sizing:border-box;} img, video { max-width: 100%; height: auto; }</style></head><body>${finalContent}</body></html>`;
+      }
+    }
+
+    const blob = new Blob([finalContent], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   };
