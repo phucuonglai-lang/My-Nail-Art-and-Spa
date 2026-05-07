@@ -14,10 +14,6 @@ import { Link } from 'react-router-dom';
 
 export default function SupplyPage() {
   const { t } = useLanguage();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  
   const [supplies, setSupplies] = useState<SupplyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,22 +28,17 @@ export default function SupplyPage() {
     category: 'Sơn Gel',
     quantity: 0,
     minThreshold: 5,
-    unit: 'chai'
+    unit: 'chai',
+    updatedBy: '',
+    isPurchased: false
   });
 
   const CATEGORIES = ['Sơn Gel', 'Bột Acrylic', 'Hóa chất', 'Dụng cụ', 'Phụ kiện', 'Khác'];
   const UNITS = ['chai', 'hộp', 'set', 'cái', 'thùng', 'gói'];
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === '305801') {
-      setIsAuthenticated(true);
-      fetchSupplies();
-    } else {
-      setError('Mật khẩu không đúng!');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
+  useEffect(() => {
+    fetchSupplies();
+  }, []);
 
   const fetchSupplies = async () => {
     setLoading(true);
@@ -103,11 +94,7 @@ export default function SupplyPage() {
         fetchSupplies();
       } catch (error: any) {
         console.error("Import Error:", error);
-        if (error.message && error.message.includes('permission')) {
-           alert("Lỗi phân quyền: Vui lòng đăng nhập tài khoản (nút Đăng Nhập góc phải trên cùng) để có quyền thêm dữ liệu vào hệ thống!");
-        } else {
-           alert("Lỗi khi đọc file CSV hoặc lưu dữ liệu: " + (error.message || "Không xác định"));
-        }
+        alert("Lỗi khi đọc file CSV hoặc lưu dữ liệu: " + (error.message || "Không xác định"));
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
         setLoading(false);
@@ -141,11 +128,7 @@ export default function SupplyPage() {
       fetchSupplies();
     } catch (error: any) {
       console.error("Save Error:", error);
-      if (error.message && error.message.includes('permission')) {
-         alert("Lỗi phân quyền: Vui lòng đăng nhập tài khoản hệ thống (ở góc phải thanh menu trên cùng) trước khi lưu dữ liệu!");
-      } else {
-         alert("Lỗi khi lưu dữ liệu: " + (error.message || "Không rõ nguyên nhân"));
-      }
+      alert("Lỗi khi lưu dữ liệu: " + (error.message || "Không rõ nguyên nhân"));
     }
   };
 
@@ -156,11 +139,7 @@ export default function SupplyPage() {
       fetchSupplies();
     } catch (error: any) {
       console.error("Delete Error:", error);
-      if (error.message && error.message.includes('permission')) {
-         alert("Lỗi phân quyền: Vui lòng đăng nhập tài khoản hệ thống!");
-      } else {
-         alert("Lỗi khi xóa: " + (error.message || "Không rõ nguyên nhân"));
-      }
+      alert("Lỗi khi xóa: " + (error.message || "Không rõ nguyên nhân"));
     }
   };
 
@@ -174,11 +153,24 @@ export default function SupplyPage() {
       fetchSupplies();
     } catch (error: any) {
       console.error("Update Qty Error:", error);
-      if (error.message && error.message.includes('permission')) {
-         alert("Lỗi phân quyền: Vui lòng đăng nhập tài khoản hệ thống!");
-      } else {
-         alert("Lỗi khi cập nhật số lượng: " + (error.message || "Không rõ nguyên nhân"));
-      }
+      alert("Lỗi khi cập nhật số lượng: " + (error.message || "Không rõ nguyên nhân"));
+    }
+  };
+
+  const togglePurchased = async (id: string, currentStatus: boolean, itemName: string) => {
+    const updaterName = prompt(`Ai đang đánh dấu mua vật tư "${itemName}"?`, "Tên của bạn...");
+    if (!updaterName) return; // User cancelled
+    
+    try {
+      await updateDoc(doc(db, 'supplies', id), { 
+        isPurchased: !currentStatus,
+        updatedBy: updaterName,
+        lastUpdated: serverTimestamp()
+      });
+      fetchSupplies();
+    } catch (error: any) {
+      console.error("Update Purchase Status Error:", error);
+      alert("Lỗi khi cập nhật trạng thái mua: " + (error.message || "Không rõ nguyên nhân"));
     }
   };
 
@@ -188,62 +180,6 @@ export default function SupplyPage() {
     const matchesFilter = filter === 'all' || (filter === 'low' && item.quantity <= item.minThreshold);
     return matchesSearch && matchesFilter;
   });
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-bg px-6 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-blue/10 blur-[100px] rounded-full -z-10" />
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-brand-card/50 backdrop-blur-xl border border-white/10 p-8 rounded-[32px] shadow-2xl relative"
-        >
-          <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-to-tr from-brand-blue to-cyan-400 rounded-full blur-xl opacity-50" />
-          <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-brand-blue mb-6 shadow-xl">
-            <Lock size={32} />
-          </div>
-          <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">HỆ THỐNG KHO</h1>
-          <p className="text-white/40 text-sm mb-8 font-medium">Vui lòng nhập mã bảo mật để truy cập quản lý vật tư.</p>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mã truy cập..."
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/20 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
-                autoFocus
-              />
-            </div>
-            <AnimatePresence>
-              {error && (
-                <motion.p 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-rose-500 text-sm font-medium"
-                >
-                  {error}
-                </motion.p>
-              )}
-            </AnimatePresence>
-            <button 
-              type="submit"
-              className="w-full bg-gradient-to-r from-brand-blue to-cyan-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-[0.98]"
-            >
-              Truy cập hệ thống <ArrowRight size={18} />
-            </button>
-          </form>
-          <div className="mt-8 pt-6 border-t border-white/5">
-             <Link to="/" className="text-white/30 hover:text-white text-xs uppercase tracking-widest font-bold flex items-center gap-2 transition-colors">
-               <ArrowLeft size={14} /> Quay lại trang chủ
-             </Link>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6">
@@ -360,21 +296,41 @@ export default function SupplyPage() {
                   >
                     <div className="flex items-center gap-5">
                       <div className={cn(
-                        "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
-                        isLow ? "bg-rose-500/10 text-rose-500 shadow-rose-500/10" : "bg-white/5 text-brand-blue"
-                      )}>
-                        {isLow ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
+                        "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg cursor-pointer transition-all hover:scale-110",
+                        item.isPurchased 
+                          ? "bg-green-500/20 text-green-500 shadow-green-500/20" 
+                          : isLow ? "bg-rose-500/10 text-rose-500 shadow-rose-500/10" : "bg-white/5 text-brand-blue"
+                      )}
+                      onClick={() => togglePurchased(item.id, !!item.isPurchased, item.name)}
+                      title="Click để đánh dấu đã mua/chưa mua"
+                      >
+                        {item.isPurchased ? <CheckCircle2 size={24} /> : isLow ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
                       </div>
                       
                       <div>
-                        <h3 className="font-bold text-lg text-white mb-1.5">{item.name}</h3>
-                        <div className="flex items-center gap-3">
+                        <h3 className="font-bold text-lg text-white mb-1.5 flex items-center gap-2">
+                          {item.name}
+                          {item.isPurchased && (
+                            <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full uppercase tracking-wider">Đã mua</span>
+                          )}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-3">
                           <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-white/40 bg-white/5 px-2 py-1 rounded-md">
                             <Tag size={10} /> {item.category}
                           </span>
-                          {isLow && (
+                          {isLow && !item.isPurchased && (
                             <span className="text-[9px] font-bold uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md animate-pulse">
                               CẦN NHẬP HÀNG
+                            </span>
+                          )}
+                          {item.updatedBy && (
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded-md">
+                              Sửa bởi: {item.updatedBy}
+                            </span>
+                          )}
+                          {item.lastUpdated && item.lastUpdated.toDate && (
+                            <span className="text-[9px] font-bold text-white/30 bg-white/5 px-2 py-1 rounded-md">
+                              {item.lastUpdated.toDate().toLocaleDateString('vi-VN')}
                             </span>
                           )}
                         </div>
@@ -442,13 +398,23 @@ export default function SupplyPage() {
               </h2>
               
               <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-2">Tên vật tư</label>
-                  <input 
-                    type="text" value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                    placeholder="VD: Sơn Gel OPI Đỏ..."
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-blue focus:outline-none transition-colors"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-2">Tên vật tư</label>
+                    <input 
+                      type="text" value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                      placeholder="VD: Sơn Gel OPI Đỏ..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-blue focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-2">Người thêm/sửa</label>
+                    <input 
+                      type="text" value={newItem.updatedBy} onChange={(e) => setNewItem({...newItem, updatedBy: e.target.value})}
+                      placeholder="Tên của bạn..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-blue focus:outline-none transition-colors"
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
