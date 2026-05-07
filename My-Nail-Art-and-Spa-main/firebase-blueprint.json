@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "instructor", "admin"] },
+        "enrolledCourses": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Nail art courses",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "category": { "type": "string" },
+        "level": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+        "instructorId": { "type": "string" }
+      },
+      "required": ["title", "description"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Individual lessons within a course",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string" },
+        "title": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "content": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["courseId", "title", "order"]
+    },
+    "Procedure": {
+      "title": "Procedure",
+      "description": "Operating procedures for salon branches",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "translations": { "type": "object" }
+      },
+      "required": ["id"]
+    },
+    "ProcedureStep": {
+      "title": "ProcedureStep",
+      "description": "Individual step in a procedure",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "order"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Available courses"
+    },
+    "/courses/{courseId}/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Lessons within a course"
+    },
+    "/procedures/{procedureId}": {
+      "schema": "Procedure",
+      "description": "Salon procedures"
+    },
+    "/procedures/{procedureId}/steps/{stepId}": {
+      "schema": "ProcedureStep",
+      "description": "Steps in a procedure"
+    }
+  }
+}
