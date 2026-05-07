@@ -16,12 +16,6 @@ export interface Course {
   thumbnail: string;
   category: string;
   level: 'beginner' | 'intermediate' | 'advanced';
-  translations?: {
-    [key: string]: {
-      title: string;
-      description: string;
-    }
-  };
 }
 
 export interface Lesson {
@@ -31,12 +25,6 @@ export interface Lesson {
   videoUrl: string;
   content: string;
   order: number;
-  translations?: {
-    [key: string]: {
-      title: string;
-      content: string;
-    }
-  };
 }
 
 export interface ProcedureStep {
@@ -45,12 +33,6 @@ export interface ProcedureStep {
   desc: string;
   videoUrl?: string;
   order: number;
-  translations?: {
-    [key: string]: {
-      title: string;
-      desc: string;
-    }
-  };
 }
 
 export interface Procedure {
@@ -86,12 +68,17 @@ export interface Policy {
   type: 'pdf' | 'doc' | 'html';
   url?: string;
   content?: string; // For HTML type
-  translations?: {
-    [key: string]: {
-      title: string;
-      content: string;
-    }
-  };
   createdAt: any;
   updatedAt: any;
 }
+
+export interface SupplyItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  minThreshold: number;
+  unit: string;
+  lastUpdated?: any;
+}
+
