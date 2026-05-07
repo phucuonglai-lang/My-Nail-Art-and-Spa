@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Common helpers
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    
+    // Admin check - includes primary owner and anything marked as admin in users collection
+    function isAdmin() { 
+      return isVerified() && (
+        request.auth.token.email == "phucuonglai@gmail.com" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    // User profiles
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // Courses
+    match /courses/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /lessons/{lessonId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+    }
+
+    // Procedures
+    match /procedures/{procedureId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /steps/{stepId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Policies
+    match /policies/{policyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Fallback: Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
