@@ -103,6 +103,8 @@ export interface SupplyItem {
   quantity: number;
   minThreshold: number;
   unit: string;
+  updatedBy?: string;
+  isPurchased?: boolean;
   lastUpdated?: any;
 }
 
