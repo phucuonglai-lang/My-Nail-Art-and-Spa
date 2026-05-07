@@ -106,7 +106,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-base font-bold mb-5 uppercase tracking-[4px] text-white underline-offset-8 decoration-brand-blue">{t.nav.library}</h3>
             <p className="text-white/30 text-xs leading-relaxed uppercase tracking-widest font-medium">
-              {t.home.feature_library_desc}
+              Truy cập thư viện video bài giảng kỹ thuật từ cơ bản đến nâng cao.
             </p>
             <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
@@ -120,7 +120,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-base font-bold mb-5 uppercase tracking-[4px] text-white">{t.nav.policies}</h3>
             <p className="text-white/30 text-xs leading-relaxed uppercase tracking-widest font-medium">
-              {t.home.feature_policies_desc}
+              Hệ thống SOP và quy định nội bộ chuẩn hóa quy trình vận hành chi nhánh.
             </p>
             <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
@@ -134,7 +134,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-base font-bold mb-5 uppercase tracking-[4px] text-white">{t.nav.scenarios}</h3>
             <p className="text-white/30 text-xs leading-relaxed uppercase tracking-widest font-medium">
-              {t.home.feature_scenarios_desc}
+              Các kịch bản ứng biến tình huống khách hàng thực tế giúp nâng cao dịch vụ.
             </p>
             <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
@@ -145,29 +145,29 @@ export default function HomePage() {
       <section className="py-40 px-6 bg-brand-card border-y border-brand-border overflow-hidden relative">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center relative z-10">
           <div>
-            <span className="text-brand-accent font-bold uppercase tracking-[6px] text-[10px] mb-8 block px-3 py-1 border border-brand-accent/20 rounded-full w-fit">{t.home.about_badge}</span>
-            <h2 className="text-5xl md:text-7xl font-bold mb-10 font-serif leading-[1] text-white uppercase tracking-tighter">{t.home.about_title}</h2>
+            <span className="text-brand-accent font-bold uppercase tracking-[6px] text-[10px] mb-8 block px-3 py-1 border border-brand-accent/20 rounded-full w-fit">About Us</span>
+            <h2 className="text-5xl md:text-7xl font-bold mb-10 font-serif leading-[1] text-white uppercase tracking-tighter">Xây dựng thương hiệu & Vận hành xuất sắc</h2>
             <div className="space-y-8 mb-16">
               <p className="text-white/50 leading-relaxed text-sm uppercase tracking-widest font-medium">
-                {t.home.about_p1}
+                Học viện Nail Academy Web Hub không chỉ là nơi đào tạo nghề, mà còn là trung tâm điều phối và chuẩn hóa quy trình cho các chi nhánh Cutler Bay, Kendall và Homestead.
               </p>
               <p className="text-white/50 leading-relaxed text-sm uppercase tracking-widest font-medium">
-                {t.home.about_p2}
+                Chúng tôi tập trung vào việc số hóa kiến thức và dữ liệu, giúp nhân viên dễ dàng tiếp cận tài liệu đào tạo và kịch bản phục vụ khách hàng mọi lúc, mọi nơi.
               </p>
             </div>
             
             <div className="grid grid-cols-3 gap-12 pt-12 border-t border-brand-border">
               <div>
                 <div className="text-5xl font-bold text-white mb-3">03</div>
-                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">{t.home.stat_branches}</div>
+                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">Chi nhánh</div>
               </div>
               <div>
                 <div className="text-5xl font-bold text-white mb-3">50+</div>
-                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">{t.home.stat_lessons}</div>
+                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">Bài giảng</div>
               </div>
               <div>
                 <div className="text-5xl font-bold text-white mb-3">24/7</div>
-                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">{t.home.stat_support}</div>
+                <div className="text-[10px] text-white/30 font-bold uppercase tracking-[4px]">Hỗ trợ</div>
               </div>
             </div>
           </div>
@@ -195,10 +195,10 @@ export default function HomePage() {
               whileHover={{ rotate: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <p className="italic text-lg font-serif leading-relaxed mb-6 text-black">{t.home.quote}</p>
+              <p className="italic text-lg font-serif leading-relaxed mb-6 text-black">"Chất lượng đào tạo là ưu tiên hàng đầu của chúng tôi."</p>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-[2px] bg-brand-accent" />
-                <p className="font-bold text-[10px] uppercase tracking-[3px] text-black/60">— {t.home.founder}</p>
+                <p className="font-bold text-[10px] uppercase tracking-[3px] text-black/60">— Steven, Founder</p>
               </div>
             </motion.div>
           </div>

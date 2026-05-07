@@ -63,10 +63,10 @@ export default function ProceduresPage() {
       <header className="mb-16 text-center relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-accent/10 blur-[80px] -z-10 rounded-full" />
         <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white mb-4">
-          {t.procedures.center_title}
+          TRUNG TÂM QUY CHUẨN
         </h1>
         <p className="text-white/30 uppercase tracking-[0.3em] text-[10px] font-bold max-w-sm mx-auto leading-relaxed">
-          {t.procedures.center_subtitle}
+          Tài liệu quy trình kỹ thuật & quy định vận hành hệ thống.
         </p>
       </header>
 
@@ -83,7 +83,7 @@ export default function ProceduresPage() {
           {procedures.length > 0 ? procedures.map((proc, idx) => {
             const knownIds = ['manicure', 'pedicure', 'gel-x', 'acrylic', 'refill'];
             const path = knownIds.includes(proc.id) ? `/${proc.id}` : `/procedure/${proc.id}`;
-            const name = proc.translations?.[language]?.nav || proc.translations?.vi?.nav || proc.id;
+            const name = proc.translations?.[language]?.nav || proc.id;
 
             return (
               <motion.div
@@ -123,65 +123,60 @@ export default function ProceduresPage() {
           <div>
             <h2 className="text-2xl font-bold uppercase tracking-tight flex items-center gap-4 text-white">
               <ShieldCheck className="text-brand-purple size-8" />
-              {t.procedures.policies_title}
+              QUY ĐỊNH & CHÍNH SÁCH
             </h2>
             <p className="text-white/20 mt-3 uppercase tracking-[0.2em] text-[10px] font-bold">
-              {t.procedures.policies_subtitle}
+              Các tài liệu quy định và chính sách hoạt động của tiệm.
             </p>
           </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {policies.length > 0 ? policies.map((policy, idx) => {
-            const title = policy.translations?.[language]?.title || policy.title;
-            const content = policy.translations?.[language]?.content || policy.content;
+          {policies.length > 0 ? policies.map((policy, idx) => (
+            <motion.div
+              key={policy.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-brand-card p-6 rounded-3xl border border-brand-border hover:border-brand-purple/50 hover:shadow-2xl transition-all group flex items-center gap-4"
+            >
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xl",
+                policy.type === 'pdf' ? "bg-rose-500/10 text-rose-500" : 
+                policy.type === 'doc' ? "bg-brand-blue/10 text-brand-blue" : "bg-emerald-500/10 text-emerald-500"
+              )}>
+                {policy.type === 'pdf' && <FileText size={24} />}
+                {policy.type === 'doc' && <File size={24} />}
+                {policy.type === 'html' && <Code size={24} />}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-sm text-white truncate uppercase tracking-widest group-hover:text-brand-purple transition-colors">{policy.title}</h3>
+                <p className="text-[10px] text-white/20 font-bold uppercase tracking-[2px] mt-1.5">{policy.type} doc</p>
+              </div>
 
-            return (
-              <motion.div
-                key={policy.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-brand-card p-6 rounded-3xl border border-brand-border hover:border-brand-purple/50 hover:shadow-2xl transition-all group flex items-center gap-4"
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xl",
-                  policy.type === 'pdf' ? "bg-rose-500/10 text-rose-500" : 
-                  policy.type === 'doc' ? "bg-brand-blue/10 text-brand-blue" : "bg-emerald-500/10 text-emerald-500"
-                )}>
-                  {policy.type === 'pdf' && <FileText size={24} />}
-                  {policy.type === 'doc' && <File size={24} />}
-                  {policy.type === 'html' && <Code size={24} />}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm text-white truncate uppercase tracking-widest group-hover:text-brand-purple transition-colors">{title}</h3>
-                  <p className="text-[10px] text-white/20 font-bold uppercase tracking-[2px] mt-1.5">{policy.type.toUpperCase()} DOCUMENT</p>
-                </div>
-
-                {policy.type === 'html' ? (
-                  <button 
-                    onClick={() => openHtmlInNewTab(content || '')}
-                    className="w-10 h-10 bg-white/5 text-brand-purple rounded-xl hover:bg-brand-purple hover:text-white transition-all shadow-xl flex items-center justify-center"
-                    title={t.nav.back}
-                  >
-                    <ExternalLink size={16} />
-                  </button>
-                ) : (
-                  <a 
-                    href={policy.url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="w-10 h-10 bg-white/5 text-brand-blue rounded-xl hover:bg-brand-blue hover:text-white transition-all shadow-xl flex items-center justify-center"
-                  >
-                    <ExternalLink size={16} />
-                  </a>
-                )}
-              </motion.div>
-            );
-          }) : (
+              {policy.type === 'html' ? (
+                <button 
+                  onClick={() => openHtmlInNewTab(policy.content || '')}
+                  className="w-10 h-10 bg-white/5 text-brand-purple rounded-xl hover:bg-brand-purple hover:text-white transition-all shadow-xl flex items-center justify-center"
+                  title="Mở trong tab mới"
+                >
+                  <ExternalLink size={16} />
+                </button>
+              ) : (
+                <a 
+                  href={policy.url} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="w-10 h-10 bg-white/5 text-brand-blue rounded-xl hover:bg-brand-blue hover:text-white transition-all shadow-xl flex items-center justify-center"
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            </motion.div>
+          )) : (
             <div className="col-span-full py-20 text-center bg-white/5 rounded-[40px] border border-dashed border-brand-border">
-               <p className="text-white/10 italic text-sm uppercase tracking-widest font-bold">{t.procedures.no_policies}</p>
+               <p className="text-white/10 italic text-sm uppercase tracking-widest font-bold">Chưa có quy định nào.</p>
             </div>
           )}
         </div>

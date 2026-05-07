@@ -105,6 +105,7 @@ export interface SupplyItem {
   unit: string;
   updatedBy?: string;
   isPurchased?: boolean;
+  branch?: 'kendall' | 'cutlerbay';
   lastUpdated?: any;
 }
 
