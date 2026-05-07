@@ -14,7 +14,8 @@ import {
   FlaskConical,
   Sparkles,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -46,6 +47,22 @@ export default function Sidebar() {
       children: [] // No children needed if it's a direct hub
     },
     {
+      id: 'reports',
+      label: 'Báo cáo',
+      icon: ClipboardList, // Will use a standard icon for now
+      color: 'text-emerald-500',
+      path: '/reports',
+      children: []
+    },
+    {
+      id: 'supply',
+      label: 'Kho & Vật tư',
+      icon: Package,
+      color: 'text-brand-blue',
+      path: '/supply',
+      children: []
+    },
+    {
       id: 'news',
       label: t.nav.sidebar.news,
       icon: Bell,
@@ -65,9 +82,9 @@ export default function Sidebar() {
       {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-6 left-6 z-50 p-4 bg-brand-card border border-brand-border rounded-2xl shadow-[0_16px_32px_rgba(0,0,0,0.4)] lg:hidden text-white active:scale-90 transition-transform active:bg-white/10"
+        className="fixed top-20 left-4 z-50 p-3 bg-brand-card border border-brand-border rounded-2xl shadow-2xl lg:hidden text-white"
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Backdrop for mobile */}
