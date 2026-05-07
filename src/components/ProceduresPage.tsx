@@ -53,13 +53,13 @@ export default function ProceduresPage() {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+    <div className="min-h-screen flex items-center justify-center bg-transparent">
       <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
     </div>
   );
 
   return (
-    <div className="pt-24 pb-12 px-6 max-w-4xl mx-auto min-h-screen">
+    <div className="pt-24 pb-12 px-6 max-w-4xl mx-auto min-h-screen bg-transparent">
       <header className="mb-16 text-center relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-accent/10 blur-[80px] -z-10 rounded-full" />
         <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white mb-4">

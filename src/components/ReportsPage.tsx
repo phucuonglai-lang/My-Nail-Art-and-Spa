@@ -44,7 +44,7 @@ export default function ReportsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-24 px-6 flex items-center justify-center bg-brand-bg relative overflow-hidden">
+      <div className="min-h-screen pt-24 px-6 flex items-center justify-center bg-transparent relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-accent/20 blur-[100px] rounded-full pointer-events-none" />
         
@@ -91,7 +91,7 @@ export default function ReportsPage() {
   const activeBranch = BRANCH_SHEETS.find(b => b.id === activeTab);
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 bg-brand-bg max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 bg-transparent max-w-7xl mx-auto">
       {/* Header */}
       <header className="mb-12">
         <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white mb-4 flex items-center gap-4">

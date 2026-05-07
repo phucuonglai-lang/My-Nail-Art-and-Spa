@@ -36,7 +36,7 @@ export default function LibraryPage() {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+    <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="w-10 h-10 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin" />
     </div>
   );

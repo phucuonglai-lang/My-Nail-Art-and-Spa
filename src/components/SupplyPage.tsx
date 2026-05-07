@@ -218,7 +218,7 @@ export default function SupplyPage() {
   // 1. Branch Selector + Global Dashboard
   if (!currentBranch) {
     return (
-      <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-transparent pt-24 pb-24 px-6 relative overflow-hidden">
         {/* Animated Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-full -z-10">
           <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-brand-blue/10 blur-[120px] rounded-full" />
@@ -383,7 +383,7 @@ export default function SupplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-transparent pt-24 pb-24 px-6 relative overflow-hidden">
       {/* Branch Background Indicator */}
       <div className={cn(
         "absolute top-0 left-0 w-full h-full -z-10 opacity-30 pointer-events-none",

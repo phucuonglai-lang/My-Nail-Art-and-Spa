@@ -34,7 +34,7 @@ import SupplyPage from './components/SupplyPage';
 
 function SharedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
       <Sidebar />
       <main className="lg:pl-80 pt-16 transition-all duration-300">
@@ -73,7 +73,7 @@ function Navbar() {
   const { loading: authLoading } = useAuth();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-border z-50 flex items-center justify-between px-6">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-black/30 backdrop-blur-xl border-b border-white/5 z-50 flex items-center justify-between px-6">
       {/* Left: Logo */}
       <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-accent/40">
@@ -436,7 +436,7 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <HashRouter>
-          <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 font-sans">
+          <div className="min-h-screen bg-transparent text-brand-text selection:bg-brand-accent/30 font-sans">
             <Routes>
               <Route path="/admin" element={
                 <AdminRoute>

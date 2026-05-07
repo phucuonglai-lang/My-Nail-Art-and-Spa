@@ -42,7 +42,7 @@ export default function HomePage() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-transparent">
       {/* Hero Section */}
       <section className="relative overflow-hidden py-32 px-6 sm:py-56">
         <div className="max-w-5xl mx-auto relative z-10 text-center">

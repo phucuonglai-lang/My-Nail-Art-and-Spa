@@ -103,7 +103,7 @@ export default function Sidebar() {
       {/* Sidebar Content */}
       <motion.aside
         className={cn(
-          "fixed top-20 left-4 bottom-4 w-72 bg-brand-card border border-brand-border rounded-[32px] overflow-hidden z-40 flex flex-col transition-all duration-300 shadow-[0_32px_64px_rgba(0,0,0,0.5)]",
+          "fixed top-20 left-4 bottom-4 w-72 bg-brand-card/70 backdrop-blur-2xl border border-white/5 rounded-[32px] overflow-hidden z-40 flex flex-col transition-all duration-300 shadow-[0_32px_64px_rgba(0,0,0,0.5)]",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}

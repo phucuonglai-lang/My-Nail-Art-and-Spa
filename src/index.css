@@ -5,7 +5,7 @@
   --font-serif: "Helvetica Neue", Arial, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   
-  --color-brand-bg: #050505;
+  --color-brand-bg: #020617;
   --color-brand-card: #121212;
   --color-brand-accent: #FF2D55;
   --color-brand-blue: #007AFF;
@@ -17,9 +17,15 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased bg-brand-bg text-brand-text;
-    background: radial-gradient(circle at top right, #1a1010, #050505 40%),
-                radial-gradient(circle at bottom left, #0a101a, #050505 40%);
+    @apply font-sans antialiased text-brand-text;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(88, 28, 135, 0.4) 0%, transparent 40%),
+      radial-gradient(circle at 80% 10%, rgba(30, 58, 138, 0.4) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, transparent 100%),
+      radial-gradient(circle at 80% 80%, rgba(76, 29, 149, 0.4) 0%, transparent 40%),
+      radial-gradient(circle at 10% 90%, rgba(30, 64, 175, 0.4) 0%, transparent 40%),
+      #020617; /* Nền tối sâu */
+    background-attachment: fixed;
     min-height: 100vh;
   }
 
