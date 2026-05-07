@@ -6,7 +6,7 @@ import { SupplyItem } from '../types';
 import { 
   Package, Plus, Trash2, Edit2, AlertTriangle, 
   CheckCircle2, Search, ArrowLeft, Lock, ArrowRight,
-  Filter, Tag, Box, BatteryWarning, Loader2, Download, Upload
+  Filter, Tag, Box, BatteryWarning, Loader2, Download, Upload, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -19,6 +19,11 @@ export default function SupplyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'low'>('all');
   
+  const [currentBranch, setCurrentBranch] = useState<'kendall' | 'cutlerbay' | null>(null);
+  const [loginBranch, setLoginBranch] = useState<'kendall' | 'cutlerbay' | null>(null);
+  const [branchPass, setBranchPass] = useState('');
+  const [authError, setAuthError] = useState('');
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -36,9 +41,29 @@ export default function SupplyPage() {
   const CATEGORIES = ['Sơn Gel', 'Bột Acrylic', 'Hóa chất', 'Dụng cụ', 'Phụ kiện', 'Khác'];
   const UNITS = ['chai', 'hộp', 'set', 'cái', 'thùng', 'gói'];
 
+  const BRANCHES = {
+    kendall: { name: 'Kendall', pass: '19742', icon: '🏢' },
+    cutlerbay: { name: 'Cutler Bay', pass: '18163', icon: '🌴' }
+  };
+
   useEffect(() => {
     fetchSupplies();
   }, []);
+
+  const handleBranchLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginBranch) return;
+    
+    if (branchPass === BRANCHES[loginBranch].pass) {
+      setCurrentBranch(loginBranch);
+      setLoginBranch(null);
+      setBranchPass('');
+      setAuthError('');
+    } else {
+      setAuthError('Mật mã không đúng!');
+      setTimeout(() => setAuthError(''), 3000);
+    }
+  };
 
   const fetchSupplies = async () => {
     setLoading(true);
@@ -85,6 +110,7 @@ export default function SupplyPage() {
               quantity: parseInt(cols[2]) || 0,
               minThreshold: parseInt(cols[3]) || 5,
               unit: cols[4],
+              branch: currentBranch,
               lastUpdated: serverTimestamp()
             };
             await addDoc(collection(db, 'supplies'), itemData);
@@ -113,6 +139,7 @@ export default function SupplyPage() {
         ...dataToSave,
         quantity: Number(newItem.quantity),
         minThreshold: Number(newItem.minThreshold),
+        branch: currentBranch,
         lastUpdated: serverTimestamp()
       };
 
@@ -124,7 +151,7 @@ export default function SupplyPage() {
       
       setIsAdding(false);
       setEditingId(null);
-      setNewItem({ name: '', category: 'Sơn Gel', quantity: 0, minThreshold: 5, unit: 'chai' });
+      setNewItem({ name: '', category: 'Sơn Gel', quantity: 0, minThreshold: 5, unit: 'chai', updatedBy: newItem.updatedBy });
       fetchSupplies();
     } catch (error: any) {
       console.error("Save Error:", error);
@@ -175,26 +202,212 @@ export default function SupplyPage() {
   };
 
   const filteredSupplies = supplies.filter(item => {
+    // Only show items for the current branch (fallback to kendall for old items)
+    if ((item.branch || 'kendall') !== currentBranch) return false;
+
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filter === 'all' || (filter === 'low' && item.quantity <= item.minThreshold);
     return matchesSearch && matchesFilter;
   });
 
+  const allLowStock = supplies.filter(item => item.quantity <= item.minThreshold && !item.isPurchased);
+
+  // --- RENDERING LOGIC ---
+
+  // 1. Branch Selector + Global Dashboard
+  if (!currentBranch) {
+    return (
+      <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6 relative overflow-hidden">
+        {/* Animated Background Gradients */}
+        <div className="absolute top-0 left-0 w-full h-full -z-10">
+          <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-brand-blue/10 blur-[120px] rounded-full" />
+          <div className="absolute bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full" />
+        </div>
+
+        <div className="max-w-6xl mx-auto">
+          <header className="text-center mb-16">
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-3 bg-white/5 border border-white/10 px-6 py-2 rounded-full mb-6"
+            >
+              <Sparkles size={16} className="text-brand-blue" />
+              <span className="text-[10px] font-black text-white/60 uppercase tracking-[3px]">Hệ Thống Quản Lý Kho</span>
+            </motion.div>
+            <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4">
+              CHỌN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-400">CHI NHÁNH</span>
+            </h1>
+            <p className="text-white/30 font-bold uppercase tracking-widest text-xs">Vui lòng chọn cơ sở để bắt đầu kiểm kê vật tư</p>
+          </header>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-20">
+            {Object.entries(BRANCHES).map(([id, info], idx) => (
+              <motion.button
+                key={id}
+                initial={{ opacity: 0, x: idx === 0 ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.02 }}
+                whileActive={{ scale: 0.98 }}
+                onClick={() => setLoginBranch(id as any)}
+                className="group relative bg-brand-card/50 backdrop-blur-xl border border-white/10 p-10 rounded-[40px] text-left transition-all hover:border-brand-blue/50 hover:shadow-[0_20px_50px_rgba(59,130,246,0.1)]"
+              >
+                <div className="text-6xl mb-6 grayscale group-hover:grayscale-0 transition-all transform group-hover:scale-110 duration-500">{info.icon}</div>
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Chi Nhánh {info.name}</h2>
+                <p className="text-white/30 text-sm font-medium uppercase tracking-widest mb-8">Quản lý kho & Nhập hàng</p>
+                <div className="flex items-center gap-2 text-brand-blue font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                  Truy cập ngay <ArrowRight size={16} />
+                </div>
+              </motion.button>
+            ))}
+          </div>
+
+          {/* GLOBAL DASHBOARD OVERVIEW */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-brand-card/30 backdrop-blur-xl border border-white/5 rounded-[48px] p-8 md:p-12"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+              <div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-4">
+                  <AlertTriangle className="text-rose-500 animate-pulse" />
+                  DASHBOARD TỔNG HỢP
+                </h3>
+                <p className="text-white/30 text-xs font-bold uppercase tracking-[0.2em] mt-2">Danh sách vật tư sắp hết trên toàn hệ thống</p>
+              </div>
+              <div className="bg-rose-500/10 border border-rose-500/20 px-6 py-3 rounded-2xl flex items-center gap-4">
+                <span className="text-2xl font-black text-rose-500">{allLowStock.length}</span>
+                <span className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest leading-tight">Mục cần<br/>bổ sung</span>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-brand-blue" /></div>
+            ) : allLowStock.length === 0 ? (
+              <div className="py-20 text-center bg-white/5 rounded-[32px] border border-dashed border-white/10">
+                <CheckCircle2 size={48} className="text-green-500/20 mx-auto mb-4" />
+                <p className="text-white/20 font-bold uppercase tracking-widest text-sm">Tất cả kho đều đầy đủ!</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                {allLowStock.map((item) => (
+                  <div key={item.id} className="bg-white/5 border border-white/5 p-5 rounded-3xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                    <div className="flex items-center gap-5">
+                      <div className={cn(
+                        "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg",
+                        (item.branch || 'kendall') === 'kendall' ? "bg-brand-blue/20 text-brand-blue" : "bg-cyan-500/20 text-cyan-400"
+                      )}>
+                        {BRANCHES[item.branch || 'kendall'].icon}
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold text-lg">{item.name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Chi nhánh: {BRANCHES[item.branch || 'kendall'].name}</span>
+                          <span className="text-rose-500/60 text-[14px]">•</span>
+                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Còn lại: {item.quantity} {item.unit}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right hidden md:block">
+                      <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Mức tối thiểu</p>
+                      <p className="text-white font-black">{item.minThreshold} {item.unit}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          <div className="mt-12 text-center">
+            <Link to="/" className="text-white/20 hover:text-white transition-colors uppercase text-[10px] font-black tracking-[4px] flex items-center justify-center gap-3">
+              <ArrowLeft size={14} /> Quay lại trang chủ
+            </Link>
+          </div>
+        </div>
+
+        {/* Password Modal */}
+        <AnimatePresence>
+          {loginBranch && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => { setLoginBranch(null); setBranchPass(''); setAuthError(''); }}
+                className="absolute inset-0 bg-black/90 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-brand-card border border-white/10 p-10 rounded-[40px] w-full max-w-md relative z-10 shadow-2xl"
+              >
+                <div className="w-20 h-20 bg-brand-blue/10 rounded-3xl flex items-center justify-center text-4xl mb-8 mx-auto">
+                  {BRANCHES[loginBranch].icon}
+                </div>
+                <h2 className="text-2xl font-black text-white text-center uppercase tracking-tight mb-2">Đăng Nhập {BRANCHES[loginBranch].name}</h2>
+                <p className="text-white/30 text-center text-sm font-medium uppercase tracking-widest mb-8">Vui lòng nhập mật mã truy cập</p>
+
+                <form onSubmit={handleBranchLogin} className="space-y-4">
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20" size={20} />
+                    <input 
+                      type="password" 
+                      value={branchPass}
+                      onChange={(e) => setBranchPass(e.target.value)}
+                      placeholder="Mật mã..."
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl pl-14 pr-6 py-5 text-white placeholder-white/10 focus:border-brand-blue focus:outline-none transition-all text-xl tracking-[1em] text-center"
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {authError && <p className="text-rose-500 text-center text-sm font-bold uppercase tracking-widest">{authError}</p>}
+
+                  <button 
+                    type="submit"
+                    className="w-full bg-brand-blue text-white font-black py-5 rounded-2xl uppercase tracking-[3px] shadow-lg shadow-brand-blue/20 hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    Mở Cửa Kho <ArrowRight size={18} />
+                  </button>
+                  
+                  <button 
+                    type="button"
+                    onClick={() => { setLoginBranch(null); setBranchPass(''); setAuthError(''); }}
+                    className="w-full text-white/20 hover:text-white transition-colors py-2 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Hủy bỏ
+                  </button>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6">
+    <div className="min-h-screen bg-brand-bg pt-24 pb-24 px-6 relative overflow-hidden">
+      {/* Branch Background Indicator */}
+      <div className={cn(
+        "absolute top-0 left-0 w-full h-full -z-10 opacity-30 pointer-events-none",
+        currentBranch === 'kendall' ? "bg-brand-blue/5" : "bg-cyan-500/5"
+      )} />
+
       <div className="max-w-6xl mx-auto">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 relative">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-blue/5 blur-[120px] rounded-full -z-10" />
-          
           <div>
+            <div className="flex items-center gap-3 mb-4">
+               <button 
+                onClick={() => setCurrentBranch(null)}
+                className="p-2 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+               >
+                 <ArrowLeft size={16} />
+               </button>
+               <span className="text-[10px] font-black text-brand-blue uppercase tracking-[3px] bg-brand-blue/10 px-3 py-1 rounded-full">
+                 Chi Nhánh: {BRANCHES[currentBranch!].name}
+               </span>
+            </div>
             <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
               <Package className="text-brand-blue size-10 md:size-12" />
-              QUẢN LÝ SUPPLY
+              QUẢN LÝ KHO
             </h1>
-            <p className="text-white/30 mt-3 text-[10px] md:text-xs font-bold uppercase tracking-[0.3em]">
-              Theo dõi tồn kho & Cảnh báo nhập hàng
-            </p>
           </div>
 
           <div className="flex items-center gap-4">
