@@ -123,6 +123,57 @@ export default function PortfolioPage() {
     }
   };
 
+  const [selectedWork, setSelectedWork] = useState<PortfolioWork | null>(null);
+  const [evaluationForm, setEvaluationForm] = useState({
+    shape: 5,
+    cuticle: 5,
+    durability: 5,
+    aesthetics: 5,
+    feedback: ''
+  });
+
+  const handleAddEvaluation = async (workId: string) => {
+    if (!profile || profile.role !== 'admin') return;
+    setUploading(true);
+    try {
+      const workRef = doc(db, 'portfolios', workId);
+      const newEval: WorkEvaluation = {
+        id: crypto.randomUUID(),
+        evaluatorId: profile.uid,
+        evaluatorName: profile.displayName || 'Admin',
+        ratings: {
+          shape: evaluationForm.shape,
+          cuticle: evaluationForm.cuticle,
+          durability: evaluationForm.durability,
+          aesthetics: evaluationForm.aesthetics
+        },
+        feedback: evaluationForm.feedback,
+        createdAt: new Date().toISOString()
+      };
+
+      const work = works.find(w => w.id === workId);
+      const updatedEvals = [...(work?.evaluations || []), newEval];
+      
+      await updateDoc(workRef, { evaluations: updatedEvals });
+      setSelectedWork(null);
+      setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '' });
+      fetchWorks();
+    } catch (error) {
+      alert("Error saving evaluation");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getAverageRating = (work: PortfolioWork) => {
+    if (!work.evaluations || work.evaluations.length === 0) return 0;
+    const total = work.evaluations.reduce((acc, curr) => {
+      const avg = (curr.ratings.shape + curr.ratings.cuticle + curr.ratings.durability + curr.ratings.aesthetics) / 4;
+      return acc + avg;
+    }, 0);
+    return total / work.evaluations.length;
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
@@ -211,7 +262,8 @@ export default function PortfolioPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="bg-white/5 rounded-[32px] border border-white/5 overflow-hidden group hover:border-brand-accent/30 transition-all hover:shadow-2xl"
+                  className="bg-white/5 rounded-[32px] border border-white/5 overflow-hidden group hover:border-brand-accent/30 transition-all hover:shadow-2xl cursor-pointer"
+                  onClick={() => setSelectedWork(work)}
                 >
                   <div className="aspect-square relative overflow-hidden">
                     <img src={work.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -239,7 +291,7 @@ export default function PortfolioPage() {
                     <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                       <div className="flex gap-1">
                         {[1,2,3,4,5].map(s => (
-                          <Star key={s} size={10} className={cn(s <= 4 ? "text-amber-400 fill-amber-400" : "text-white/10")} />
+                          <Star key={s} size={10} className={cn(s <= Math.round(getAverageRating(work)) ? "text-amber-400 fill-amber-400" : "text-white/10")} />
                         ))}
                       </div>
                       <button className="text-[9px] font-black uppercase tracking-widest text-brand-accent hover:underline flex items-center gap-1">
@@ -409,6 +461,138 @@ export default function PortfolioPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Detail & Evaluation Modal */}
+      <AnimatePresence>
+        {selectedWork && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedWork(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#121212] w-full max-w-4xl rounded-[40px] p-8 border border-white/10 relative z-10 shadow-2xl overflow-y-auto max-h-[90vh] grid grid-cols-1 md:grid-cols-2 gap-10"
+            >
+              <button 
+                onClick={() => setSelectedWork(null)}
+                className="absolute top-6 right-6 p-2 text-white/20 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              {/* Left: Image & Info */}
+              <div>
+                <div className="aspect-square rounded-[32px] overflow-hidden mb-6">
+                  <img src={selectedWork.imageUrl} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest bg-brand-accent px-3 py-1 rounded-full text-white">{selectedWork.category}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full text-white/40">Cấp {selectedWork.level}</span>
+                </div>
+                <p className="text-white/60 text-sm leading-relaxed mb-6">
+                  {selectedWork.notes || "Không có ghi chú thêm từ thợ."}
+                </p>
+                
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white/20">Thực hiện bởi</h4>
+                  <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl">
+                    <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center font-black text-white">
+                      {selectedWork.technicianName[0]}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">{selectedWork.technicianName}</div>
+                      <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Technician</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Evaluations */}
+              <div className="flex flex-col">
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
+                  <Star className="text-amber-400 fill-amber-400" /> Đánh giá & Góp ý
+                </h3>
+
+                <div className="flex-1 space-y-6 overflow-y-auto pr-2 max-h-[400px]">
+                  {selectedWork.evaluations && selectedWork.evaluations.length > 0 ? (
+                    selectedWork.evaluations.map((evalItem) => (
+                      <div key={evalItem.id} className="bg-white/5 p-6 rounded-[32px] border border-white/5">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="text-[10px] font-black text-brand-accent uppercase tracking-widest">{evalItem.evaluatorName}</div>
+                          <div className="text-[9px] text-white/20">{new Date(evalItem.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          {Object.entries(evalItem.ratings).map(([key, val]) => (
+                            <div key={key} className="flex justify-between items-center">
+                              <span className="text-[9px] font-bold text-white/40 uppercase">{key}</span>
+                              <div className="flex gap-0.5">
+                                {[1,2,3,4,5].map(s => <div key={s} className={cn("w-1.5 h-1.5 rounded-full", s <= val ? "bg-amber-400" : "bg-white/10")} />)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-white/70 italic">"{evalItem.feedback}"</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[32px]">
+                      <p className="text-white/20 text-xs font-bold uppercase tracking-widest">Chưa có đánh giá nào.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Admin Grading Form */}
+                {profile?.role === 'admin' && (
+                  <div className="mt-8 pt-8 border-t border-white/10">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-6">Chấm điểm & Nhận xét</h4>
+                    <div className="grid grid-cols-2 gap-6 mb-6">
+                      {['shape', 'cuticle', 'durability', 'aesthetics'].map((field) => (
+                        <div key={field}>
+                          <label className="text-[9px] font-bold text-white/40 uppercase mb-2 block">{field}</label>
+                          <div className="flex gap-2">
+                            {[1,2,3,4,5].map(s => (
+                              <button 
+                                key={s}
+                                onClick={() => setEvaluationForm({...evaluationForm, [field]: s})}
+                                className={cn(
+                                  "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                                  (evaluationForm as any)[field] >= s ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" : "bg-white/5 text-white/20"
+                                )}
+                              >
+                                <Star size={12} fill={ (evaluationForm as any)[field] >= s ? "currentColor" : "none" } />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <textarea 
+                      value={evaluationForm.feedback}
+                      onChange={e => setEvaluationForm({...evaluationForm, feedback: e.target.value})}
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
+                      placeholder="Viết lời khuyên hoặc góp ý kỹ thuật..."
+                    />
+                    <button 
+                      onClick={() => handleAddEvaluation(selectedWork.id)}
+                      disabled={uploading}
+                      className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
+                    >
+                      {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
+                      Gửi Đánh Giá
+                    </button>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
