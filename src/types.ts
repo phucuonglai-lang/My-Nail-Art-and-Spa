@@ -114,6 +114,7 @@ export interface PortfolioWork {
   technicianId: string;
   technicianName: string;
   imageUrl: string;
+  imageUrls: string[];
   tags: string[];
   duration: string;
   notes: string;
@@ -134,6 +135,6 @@ export interface WorkEvaluation {
     aesthetics: number;
   };
   feedback: string;
-  annotatedImageUrl?: string;
+  annotatedImageUrls?: string[];
   createdAt: any;
 }

@@ -210,6 +210,7 @@ export default function PortfolioPage() {
   // Form states
   const [newWork, setNewWork] = useState<Partial<PortfolioWork>>({
     imageUrl: '',
+    imageUrls: [],
     tags: [],
     duration: '',
     notes: '',
@@ -272,16 +273,40 @@ export default function PortfolioPage() {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setNewWork({ ...newWork, imageUrl: event.target?.result as string });
-      setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    const newImages: string[] = [];
+    let processed = 0;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        newImages.push(event.target?.result as string);
+        processed++;
+        if (processed === files.length) {
+          setNewWork(prev => ({ 
+            ...prev, 
+            imageUrls: [...(prev.imageUrls || []), ...newImages],
+            imageUrl: prev.imageUrl || newImages[0] // Set first image as thumbnail if none exists
+          }));
+          setUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeUploadImage = (idx: number) => {
+    setNewWork(prev => {
+      const updated = prev.imageUrls?.filter((_, i) => i !== idx) || [];
+      return {
+        ...prev,
+        imageUrls: updated,
+        imageUrl: updated[0] || ''
+      };
+    });
   };
 
   const handleAddTag = (e: React.KeyboardEvent) => {
@@ -300,8 +325,8 @@ export default function PortfolioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWork.imageUrl || !newWork.technicianId) {
-      alert("Vui lòng chọn nhân viên và tải ảnh lên");
+    if ((!newWork.imageUrls || newWork.imageUrls.length === 0) || !newWork.technicianId) {
+      alert("Vui lòng chọn nhân viên và tải ít nhất 1 ảnh lên");
       return;
     }
 
@@ -316,7 +341,7 @@ export default function PortfolioPage() {
         evaluations: []
       });
       setIsAdding(false);
-      setNewWork({ imageUrl: '', tags: [], duration: '', notes: '', category: 'Manicure', level: 1, technicianId: '', technicianName: '' });
+      setNewWork({ imageUrl: '', imageUrls: [], tags: [], duration: '', notes: '', category: 'Manicure', level: 1, technicianId: '', technicianName: '' });
       fetchWorks();
     } catch (error) {
       alert("Error saving work");
@@ -326,14 +351,21 @@ export default function PortfolioPage() {
   };
 
   const [selectedWork, setSelectedWork] = useState<PortfolioWork | null>(null);
-  const [showAnnotator, setShowAnnotator] = useState(false);
+  const [activePreviewUrl, setActivePreviewUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (selectedWork) {
+      setActivePreviewUrl(selectedWork.imageUrls?.[0] || selectedWork.imageUrl);
+    }
+  }, [selectedWork]);
+  const [showAnnotator, setShowAnnotator] = useState<{show: boolean, imageUrl: string, idx?: number}>({ show: false, imageUrl: '' });
   const [evaluationForm, setEvaluationForm] = useState({
     shape: 5,
     cuticle: 5,
     durability: 5,
     aesthetics: 5,
     feedback: '',
-    annotatedImageUrl: ''
+    annotatedImageUrls: [] as string[]
   });
 
   const handleAddEvaluation = async (workId: string) => {
@@ -351,7 +383,7 @@ export default function PortfolioPage() {
           aesthetics: evaluationForm.aesthetics
         },
         feedback: evaluationForm.feedback,
-        annotatedImageUrl: evaluationForm.annotatedImageUrl,
+        annotatedImageUrls: evaluationForm.annotatedImageUrls,
         createdAt: new Date().toISOString()
       };
 
@@ -360,7 +392,7 @@ export default function PortfolioPage() {
       
       await updateDoc(workRef, { evaluations: updatedEvals });
       setSelectedWork(null);
-      setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '', annotatedImageUrl: '' });
+      setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '', annotatedImageUrls: [] });
       fetchWorks();
     } catch (error) {
       console.error(error);
@@ -629,16 +661,32 @@ export default function PortfolioPage() {
                   </select>
                 </div>
 
-                <div className="aspect-square bg-white/5 rounded-[32px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer">
-                  {newWork.imageUrl ? (
-                    <img src={newWork.imageUrl} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <>
-                      <Camera size={48} className="text-white/20 mb-4 group-hover:text-brand-accent transition-colors" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Chọn hoặc chụp ảnh</p>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                <div className="space-y-4">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 block">Hình ảnh (Có thể chọn nhiều)</label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {newWork.imageUrls?.map((url, idx) => (
+                      <div key={idx} className="aspect-square rounded-2xl overflow-hidden relative group">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => removeUploadImage(idx)}
+                          className="absolute top-2 right-2 p-1 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="aspect-square bg-white/5 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center relative hover:border-brand-accent/50 transition-colors cursor-pointer">
+                      <Plus size={24} className="text-white/20" />
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleFileUpload} 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -742,8 +790,31 @@ export default function PortfolioPage() {
 
               {/* Left: Image & Info */}
               <div>
-                <div className="aspect-square rounded-[32px] overflow-hidden mb-6">
-                  <img src={selectedWork.imageUrl} alt="" className="w-full h-full object-cover" />
+                <div className="space-y-6">
+                  {/* Main Display Image */}
+                  <div className="aspect-square rounded-[32px] overflow-hidden bg-white/5 border border-white/10">
+                    <img 
+                      src={activePreviewUrl} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+
+                  {/* Thumbnail Gallery */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {(selectedWork.imageUrls || [selectedWork.imageUrl]).map((url, i) => (
+                      <button 
+                        key={i}
+                        onClick={() => setActivePreviewUrl(url)}
+                        className={cn(
+                          "aspect-square rounded-xl overflow-hidden border-2 transition-all relative group",
+                          activePreviewUrl === url ? "border-brand-accent shadow-lg shadow-brand-accent/20" : "border-white/10 hover:border-white/30"
+                        )}
+                      >
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-[10px] font-black uppercase tracking-widest bg-brand-accent px-3 py-1 rounded-full text-white">{selectedWork.category}</span>
@@ -782,9 +853,13 @@ export default function PortfolioPage() {
                           <div className="text-[9px] text-white/20">{new Date(evalItem.createdAt).toLocaleDateString()}</div>
                         </div>
                         
-                        {evalItem.annotatedImageUrl && (
-                          <div className="aspect-video rounded-2xl overflow-hidden mb-4 border border-white/10">
-                            <img src={evalItem.annotatedImageUrl} alt="Góp ý hình ảnh" className="w-full h-full object-cover" />
+                        {evalItem.annotatedImageUrls && evalItem.annotatedImageUrls.length > 0 && (
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {evalItem.annotatedImageUrls.map((annoUrl, i) => annoUrl && (
+                              <div key={i} className="aspect-video rounded-xl overflow-hidden border border-white/10">
+                                <img src={annoUrl} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            ))}
                           </div>
                         )}
 
@@ -810,27 +885,43 @@ export default function PortfolioPage() {
 
                 {/* Admin Grading Form */}
                 <div className="mt-8 pt-8 border-t border-white/10">
-                  <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent">Chấm điểm & Nhận xét</h4>
-                      <button 
-                        onClick={() => setShowAnnotator(true)}
-                        className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-white hover:bg-brand-accent transition-all"
-                      >
-                        <Pencil size={12} /> {evaluationForm.annotatedImageUrl ? 'Sửa hình đã vẽ' : 'Vẽ/Góp ý trên ảnh'}
-                      </button>
+                  <div className="mb-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">Chấm điểm & Nhận xét</h4>
+                    <p className="text-[9px] text-white/40 uppercase mb-4">Click vào ảnh để vẽ ghi chú kỹ thuật:</p>
+                    <div className="flex flex-wrap gap-3">
+                      {(selectedWork.imageUrls || [selectedWork.imageUrl]).map((url, i) => {
+                        const annotated = evaluationForm.annotatedImageUrls[i];
+                        return (
+                          <div key={i} className="relative group">
+                            <button 
+                              onClick={() => setShowAnnotator({ show: true, imageUrl: url, idx: i })}
+                              className={cn(
+                                "w-16 h-16 rounded-xl overflow-hidden border-2 transition-all",
+                                annotated ? "border-brand-accent shadow-lg shadow-brand-accent/20" : "border-white/10 hover:border-white/30"
+                              )}
+                            >
+                              <img src={annotated || url} alt="" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Pencil size={12} className="text-white" />
+                              </div>
+                            </button>
+                            {annotated && (
+                              <button 
+                                onClick={() => {
+                                  const newAnnos = [...evaluationForm.annotatedImageUrls];
+                                  delete newAnnos[i];
+                                  setEvaluationForm({...evaluationForm, annotatedImageUrls: newAnnos});
+                                }}
+                                className="absolute -top-2 -right-2 p-1 bg-brand-accent rounded-full text-white shadow-lg"
+                              >
+                                <X size={8} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    
-                    {evaluationForm.annotatedImageUrl && (
-                      <div className="mb-6 relative group">
-                        <img src={evaluationForm.annotatedImageUrl} className="w-full aspect-video object-cover rounded-2xl border border-brand-accent/50" alt="" />
-                        <button 
-                          onClick={() => setEvaluationForm({...evaluationForm, annotatedImageUrl: ''})}
-                          className="absolute top-2 right-2 p-1 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    )}
+                  </div>
 
                     <div className="grid grid-cols-2 gap-6 mb-6">
                       {['shape', 'cuticle', 'durability', 'aesthetics'].map((field) => (
@@ -875,13 +966,17 @@ export default function PortfolioPage() {
       </AnimatePresence>
 
       {/* Image Annotator Tool */}
-      {showAnnotator && selectedWork && (
+      {showAnnotator.show && (
         <ImageAnnotator 
-          imageUrl={selectedWork.imageUrl}
-          onClose={() => setShowAnnotator(false)}
+          imageUrl={showAnnotator.imageUrl}
+          onClose={() => setShowAnnotator({ show: false, imageUrl: '' })}
           onSave={(dataUrl) => {
-            setEvaluationForm({ ...evaluationForm, annotatedImageUrl: dataUrl });
-            setShowAnnotator(false);
+            if (showAnnotator.idx !== undefined) {
+              const newAnnos = [...evaluationForm.annotatedImageUrls];
+              newAnnos[showAnnotator.idx] = dataUrl;
+              setEvaluationForm({ ...evaluationForm, annotatedImageUrls: newAnnos });
+            }
+            setShowAnnotator({ show: false, imageUrl: '' });
           }}
         />
       )}
