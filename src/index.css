@@ -18,7 +18,7 @@
 @layer base {
   body {
     @apply font-sans antialiased text-brand-text;
-    background: linear-gradient(135deg, #701a75 0%, #4c1d95 50%, #1e3a8a 100%);
+    background: linear-gradient(135deg, #2d0630 0%, #1e0b40 50%, #0a132e 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
