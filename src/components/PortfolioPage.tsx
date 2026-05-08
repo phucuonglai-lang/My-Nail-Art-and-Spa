@@ -547,7 +547,6 @@ export default function PortfolioPage() {
             )}
           </div>
         </div>
-      )}
 
       {view === 'analytics' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -809,9 +808,8 @@ export default function PortfolioPage() {
                 </div>
 
                 {/* Admin Grading Form */}
-                {profile?.role === 'admin' && (
-                  <div className="mt-8 pt-8 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="mt-8 pt-8 border-t border-white/10">
+                  <div className="flex items-center justify-between mb-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent">Chấm điểm & Nhận xét</h4>
                       <button 
                         onClick={() => setShowAnnotator(true)}
@@ -869,7 +867,6 @@ export default function PortfolioPage() {
                       Gửi Đánh Giá
                     </button>
                   </div>
-                )}
               </div>
             </motion.div>
           </div>
