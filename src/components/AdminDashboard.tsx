@@ -505,7 +505,16 @@ export default function AdminDashboard() {
   };
 
   const handleAddCourse = async () => {
-    if (!newCourse.title || !newCourse.description) return;
+    if (!newCourse.title) {
+      alert("Vui lòng nhập tên khóa học");
+      return;
+    }
+    if (!newCourse.description) {
+      alert("Vui lòng nhập mô tả khóa học");
+      return;
+    }
+    
+    setLoading(true);
     try {
       if (editingCourseId) {
         await updateDoc(doc(db, 'courses', editingCourseId), newCourse);
@@ -517,7 +526,10 @@ export default function AdminDashboard() {
       setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
       fetchData();
     } catch (error) {
-      alert("Lỗi khi lưu khóa học");
+      console.error("Save Course Error:", error);
+      alert("Lỗi khi lưu khóa học: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -539,8 +551,13 @@ export default function AdminDashboard() {
   };
 
   const handleAddLesson = async () => {
-    if (!selectedCourseId || !newLesson.title) return;
+    if (!selectedCourseId) return;
+    if (!newLesson.title) {
+      alert("Vui lòng nhập tiêu đề bài học");
+      return;
+    }
     
+    setLoading(true);
     const processedLesson = {
       ...newLesson,
       videoUrl: convertToEmbedUrl(newLesson.videoUrl || '')
@@ -563,7 +580,10 @@ export default function AdminDashboard() {
       setNewLesson({ title: '', videoUrl: '', content: '', order: lessons.length + 1 });
       fetchLessons(selectedCourseId);
     } catch (error) {
-      alert("Error saving lesson");
+      console.error("Save Lesson Error:", error);
+      alert("Lỗi khi lưu bài học");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1183,8 +1203,10 @@ export default function AdminDashboard() {
                         </button>
                         <button 
                           onClick={handleAddCourse}
-                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                          disabled={loading}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
+                          {loading && <RefreshCw size={16} className="animate-spin" />}
                           {t.admin.save_course}
                         </button>
                       </div>
