@@ -139,9 +139,14 @@ export default function PortfolioPage() {
         Vui lòng đăng nhập để xem hồ sơ tay nghề và bảng đánh giá của bạn.
       </p>
       <button 
-        onClick={() => {
-          const provider = new GoogleAuthProvider();
-          signInWithPopup(auth, provider);
+        onClick={async () => {
+          try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+          } catch (error: any) {
+            console.error("Login Error:", error);
+            alert("Lỗi đăng nhập: " + (error.message || "Vui lòng kiểm tra lại kết nối mạng hoặc trình duyệt (cho phép cửa sổ bật lên - popup)"));
+          }
         }}
         className="bg-brand-accent text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 hover:scale-105 transition-all"
       >
