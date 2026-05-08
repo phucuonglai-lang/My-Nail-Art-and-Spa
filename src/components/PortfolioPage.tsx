@@ -622,10 +622,10 @@ export default function PortfolioPage() {
                     required
                     value={newWork.technicianId}
                     onChange={e => setNewWork({...newWork, technicianId: e.target.value})}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
+                    className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
                   >
-                    <option value="">-- Chọn nhân viên --</option>
-                    {technicians.map(tech => <option key={tech.uid} value={tech.uid}>{tech.name}</option>)}
+                    <option value="" className="text-black">-- Chọn nhân viên --</option>
+                    {technicians.map(tech => <option key={tech.uid} value={tech.uid} className="text-black">{tech.name}</option>)}
                   </select>
                 </div>
 
@@ -647,9 +647,9 @@ export default function PortfolioPage() {
                     <select 
                       value={newWork.category}
                       onChange={e => setNewWork({...newWork, category: e.target.value})}
-                      className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none"
+                      className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none"
                     >
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      {categories.map(c => <option key={c} value={c} className="text-black">{c}</option>)}
                     </select>
                   </div>
                   <div>
