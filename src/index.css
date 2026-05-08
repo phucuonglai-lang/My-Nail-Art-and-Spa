@@ -18,13 +18,7 @@
 @layer base {
   body {
     @apply font-sans antialiased text-brand-text;
-    background: 
-      radial-gradient(circle at 20% 20%, rgba(88, 28, 135, 0.4) 0%, transparent 40%),
-      radial-gradient(circle at 80% 10%, rgba(30, 58, 138, 0.4) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, transparent 100%),
-      radial-gradient(circle at 80% 80%, rgba(76, 29, 149, 0.4) 0%, transparent 40%),
-      radial-gradient(circle at 10% 90%, rgba(30, 64, 175, 0.4) 0%, transparent 40%),
-      #020617; /* Nền tối sâu */
+    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #2563eb 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }

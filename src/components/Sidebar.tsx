@@ -103,7 +103,7 @@ export default function Sidebar() {
       {/* Sidebar Content */}
       <motion.aside
         className={cn(
-          "fixed top-20 left-4 bottom-4 w-72 bg-brand-card/70 backdrop-blur-2xl border border-white/5 rounded-[32px] overflow-hidden z-40 flex flex-col transition-all duration-300 shadow-[0_32px_64px_rgba(0,0,0,0.5)]",
+          "fixed top-20 left-4 bottom-4 w-72 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[32px] overflow-hidden z-40 flex flex-col transition-all duration-300 shadow-[0_32px_64px_rgba(0,0,0,0.3)]",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -198,7 +198,7 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        <div className="p-8 border-t border-brand-border bg-white/5 backdrop-blur-md">
+        <div className="p-8 border-t border-white/5 bg-transparent backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-accent to-brand-purple text-white flex items-center justify-center text-[11px] font-bold shadow-lg shadow-brand-accent/20">
               US
