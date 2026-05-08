@@ -252,9 +252,13 @@ export default function PortfolioPage() {
       const q = query(collection(db, 'users'), where('role', '==', 'student'));
       const snap = await getDocs(q);
       const list = snap.docs.map(doc => ({ uid: doc.id, name: doc.data().displayName }));
+      
+      // If we got no technicians from users collection (likely due to guest rules),
+      // we can still allow the page to function.
       setTechnicians(list);
     } catch (e) {
-      console.error(e);
+      console.error("Fetch Technicians Error (likely guest restriction):", e);
+      // Don't set technicians, keep it empty and the UI will handle it
     }
   };
 
@@ -383,7 +387,8 @@ export default function PortfolioPage() {
       
       await addDoc(collection(db, 'portfolios'), {
         ...newWork,
-        technicianName: selectedTechnician?.name || 'Technician',
+        technicianName: selectedTechnician?.name || newWork.technicianName || 'Technician',
+        technicianId: newWork.technicianId || 'anonymous-' + Date.now(),
         createdAt: serverTimestamp(),
         evaluations: []
       });
@@ -751,14 +756,23 @@ export default function PortfolioPage() {
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.technician}</label>
                   <select 
-                    required
+                    required={technicians.length > 0}
                     value={newWork.technicianId}
                     onChange={e => setNewWork({...newWork, technicianId: e.target.value})}
-                    className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
+                    className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors mb-3"
                   >
                     <option value="" className="text-black">-- {t.portfolio.technician} --</option>
                     {technicians.map(tech => <option key={tech.uid} value={tech.uid} className="text-black">{tech.name}</option>)}
                   </select>
+                  
+                  {/* Fallback for manual technician name if list is empty or guest wants to enter new name */}
+                  <input 
+                    type="text"
+                    placeholder="Hoặc nhập tên nhân viên..."
+                    value={newWork.technicianName}
+                    onChange={e => setNewWork({...newWork, technicianName: e.target.value})}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
+                  />
                 </div>
 
                 <div className="space-y-4">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Video, ShieldCheck, MessageSquare, ArrowRight } from 'lucide-react';
+import { Video, ShieldCheck, MessageSquare, ArrowRight, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -80,6 +80,11 @@ export default function HomePage() {
                 {t.nav.library} <ArrowRight className="ml-3 h-4 w-4" />
               </Button>
             </Link>
+            <Link to="/portfolio">
+               <Button size="lg" variant="outline" className="border-brand-accent/50 text-brand-accent">
+                 {t.portfolio.title}
+               </Button>
+            </Link>
             <Link to="/procedures">
                <Button size="lg" variant="outline">
                  {t.nav.procedures}
@@ -137,6 +142,21 @@ export default function HomePage() {
               Các kịch bản ứng biến tình huống khách hàng thực tế giúp nâng cao dịch vụ.
             </p>
             <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          </motion.div>
+
+          <motion.div 
+            className="group bg-brand-card p-10 rounded-[40px] border border-brand-border flex flex-col items-center text-center hover:border-amber-500/50 transition-all duration-500 relative overflow-hidden"
+            whileHover={{ y: -12 }}
+          >
+            <Link to="/portfolio" className="absolute inset-0 z-10" />
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-10 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-xl shadow-amber-500/10">
+              <Award className="h-8 w-8" />
+            </div>
+            <h3 className="text-base font-bold mb-5 uppercase tracking-[4px] text-white">{t.portfolio.title}</h3>
+            <p className="text-white/30 text-xs leading-relaxed uppercase tracking-widest font-medium">
+              Xem và đăng các tác phẩm nail nghệ thuật từ đội ngũ chuyên viên của chúng tôi.
+            </p>
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
         </div>
       </section>

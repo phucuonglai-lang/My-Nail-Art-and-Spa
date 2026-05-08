@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { 
@@ -24,6 +25,7 @@ import { cn } from '../lib/utils';
 
 export default function Sidebar() {
   const { t } = useLanguage();
+  const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>('nails');
 
@@ -220,11 +222,15 @@ export default function Sidebar() {
         <div className="p-8 border-t border-white/5 bg-transparent backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-accent to-brand-purple text-white flex items-center justify-center text-[11px] font-bold shadow-lg shadow-brand-accent/20">
-              US
+              {profile?.displayName?.[0] || 'G'}
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Active User</p>
-              <p className="text-[9px] text-white/30 uppercase tracking-[3px]">Nail Tech</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">
+                {profile?.displayName || 'Khách / Guest'}
+              </p>
+              <p className="text-[9px] text-white/30 uppercase tracking-[3px]">
+                {profile?.role || 'Viewer'}
+              </p>
             </div>
           </div>
         </div>
