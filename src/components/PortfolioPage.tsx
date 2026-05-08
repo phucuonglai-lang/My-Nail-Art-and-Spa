@@ -132,39 +132,42 @@ const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSav
     img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   };
 
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
-      <div className="w-full max-w-4xl flex items-center justify-between mb-6">
-        <h2 className="text-xl font-black text-white uppercase tracking-tighter">Khoanh tròn lỗi kỹ thuật</h2>
-        <div className="flex gap-4">
-          <button onClick={clearCanvas} className="p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all">
-            <RotateCcw size={20} />
-          </button>
-          <button onClick={handleSave} className="px-8 py-3 bg-brand-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/30">
-            Lưu ảnh đã vẽ
-          </button>
-          <button onClick={onClose} className="p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all">
-            <X size={20} />
-          </button>
-        </div>
-      </div>
+  const { t } = useLanguage();
 
-      <div className="relative bg-white/5 p-2 rounded-[32px] border border-white/10 shadow-2xl overflow-hidden cursor-crosshair">
-        <canvas 
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4">
+      <div className="flex gap-4 mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md">
+        <input type="color" value={brushColor} onChange={(e) => setBrushColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-none" />
+        <div className="flex gap-2">
+          {[2, 4, 8, 12].map(size => (
+            <button key={size} onClick={() => setBrushSize(size)} className={cn("w-8 h-8 rounded-lg font-bold text-[10px]", brushSize === size ? "bg-brand-accent text-white" : "bg-white/5 text-white/40")}>{size}</button>
+          ))}
+        </div>
+        <div className="w-px h-8 bg-white/10 mx-2" />
+        <button onClick={clearCanvas} className="p-2 text-white/40 hover:text-white transition-colors"><RotateCcw size={18} /></button>
+        <button onClick={handleSave} className="bg-brand-accent text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 flex items-center gap-2">
+          <Download size={14} /> {t.portfolio.save_draw}
+        </button>
+        <button onClick={onClose} className="bg-white/10 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+          <X size={14} /> {t.portfolio.close}
+        </button>
+      </div>
+      
+      <p className="text-[10px] text-white/40 uppercase tracking-widest mb-4 font-black">{t.portfolio.draw_tip}</p>
+      
+      <div className="relative bg-white/5 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+        <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
-          onMouseOut={stopDrawing}
+          onMouseLeave={stopDrawing}
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="rounded-[24px] touch-none"
+          className="cursor-crosshair"
         />
       </div>
-      
-      <div className="mt-8 flex gap-6 bg-white/5 p-4 rounded-3xl border border-white/5">
-        <div className="flex items-center gap-3">
           <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Màu sắc</div>
           {['#ff2d55', '#ffcc00', '#007aff', '#4cd964'].map(c => (
             <button 
@@ -397,7 +400,7 @@ export default function PortfolioPage() {
   }, [selectedWork]);
   const [showAnnotator, setShowAnnotator] = useState<{show: boolean, imageUrl: string, idx?: number}>({ show: false, imageUrl: '' });
   const handleDeleteWork = async (workId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.")) return;
+    if (!window.confirm(t.portfolio.delete_confirm)) return;
     
     setUploading(true);
     try {
@@ -518,7 +521,7 @@ export default function PortfolioPage() {
                   selectedTech === 'all' ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
                 )}
               >
-                Tất cả nhân viên
+                {t.portfolio.all_techs}
               </button>
               {technicians.map(tech => (
                 <button 
@@ -541,10 +544,10 @@ export default function PortfolioPage() {
           <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">
-                {selectedTech === 'all' ? 'Tổng Hợp Hồ Sơ' : technicians.find(t => t.uid === selectedTech)?.name}
+                {selectedTech === 'all' ? t.portfolio.title : technicians.find(t => t.uid === selectedTech)?.name}
               </h1>
               <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
-                Quản lý tay nghề theo tháng & nhân viên
+                {t.portfolio.subtitle}
               </p>
             </div>
             
@@ -567,13 +570,13 @@ export default function PortfolioPage() {
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white/50 uppercase tracking-widest flex items-center gap-3">
-                <ImageIcon size={20} className="text-brand-accent" /> Tác Phẩm {months[selectedMonth]}
+                <ImageIcon size={20} className="text-brand-accent" /> {t.portfolio.works} {months[selectedMonth]}
               </h2>
               <button 
                 onClick={() => setIsAdding(true)}
-                className="bg-brand-accent text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-brand-accent/20"
+                className="flex items-center gap-2 bg-brand-accent text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 hover:scale-105 active:scale-95 transition-all"
               >
-                <Plus size={16} /> Đăng Tác Phẩm Mới
+                <Plus size={16} /> {t.portfolio.add_work}
               </button>
             </div>
 
@@ -619,7 +622,7 @@ export default function PortfolioPage() {
                     </div>
                     {work.level && (
                       <div className="absolute top-4 left-4 bg-brand-accent px-3 py-1 rounded-full text-[9px] font-black text-white uppercase tracking-widest shadow-lg">
-                        Cấp {work.level}
+                        {t.portfolio.level} {work.level}
                       </div>
                     )}
                   </div>
@@ -630,7 +633,7 @@ export default function PortfolioPage() {
                         <span key={tag} className="text-[9px] font-bold text-brand-accent">#{tag}</span>
                       ))}
                     </div>
-                    <h3 className="text-white font-bold text-sm mb-2 line-clamp-1">{work.notes || "Không có ghi chú"}</h3>
+                    <h3 className="text-white font-bold text-sm mb-2 line-clamp-1">{work.notes || t.portfolio.notes}</h3>
                     <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                       <Users size={10} /> {work.technicianName}
                     </p>
@@ -642,7 +645,7 @@ export default function PortfolioPage() {
                         ))}
                       </div>
                       <button className="text-[9px] font-black uppercase tracking-widest text-brand-accent hover:underline flex items-center gap-1">
-                        Chi tiết <ChevronRight size={10} />
+                        {t.portfolio.detail} <ChevronRight size={10} />
                       </button>
                     </div>
 
@@ -653,7 +656,7 @@ export default function PortfolioPage() {
                         handleDeleteWork(work.id);
                       }}
                       className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
-                      title="Xóa nhanh"
+                      title={t.portfolio.quick_delete}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -664,7 +667,7 @@ export default function PortfolioPage() {
             
             {works.length === 0 && (
               <div className="col-span-full py-24 text-center bg-white/5 rounded-[40px] border border-dashed border-white/10">
-                <p className="text-white/20 font-bold uppercase tracking-widest text-sm">Chưa có tác phẩm nào được đăng.</p>
+                <p className="text-white/20 font-bold uppercase tracking-widest text-sm">{t.portfolio.no_works}</p>
               </div>
             )}
           </div>
@@ -674,14 +677,14 @@ export default function PortfolioPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white/5 rounded-[40px] p-8 border border-white/5">
             <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
-              <TrendingUp className="text-brand-accent" /> Phân Tích Kỹ Thuật
+              <TrendingUp className="text-brand-accent" /> {t.portfolio.analytics}
             </h2>
             <div className="space-y-6">
               {[
-                { label: 'Form móng (Shape)', value: 85, color: 'bg-brand-accent' },
-                { label: 'Làm sạch da (Cuticle)', value: 70, color: 'bg-brand-blue' },
-                { label: 'Độ bền (Durability)', value: 95, color: 'bg-emerald-500' },
-                { label: 'Thẩm mỹ (Aesthetics)', value: 80, color: 'bg-brand-purple' }
+                { label: t.portfolio.shape, value: 85, color: 'bg-brand-accent' },
+                { label: t.portfolio.cuticle, value: 70, color: 'bg-brand-blue' },
+                { label: t.portfolio.durability, value: 95, color: 'bg-emerald-500' },
+                { label: t.portfolio.aesthetics, value: 80, color: 'bg-brand-purple' }
               ].map(stat => (
                 <div key={stat.label}>
                   <div className="flex justify-between mb-2">
@@ -704,9 +707,9 @@ export default function PortfolioPage() {
             <div className="w-32 h-32 rounded-full border-4 border-brand-accent flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(255,45,85,0.2)]">
               <div className="text-4xl font-black text-white">4.2</div>
             </div>
-            <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Chuyên Viên Cấp 4</h3>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t.portfolio.level_name} 4</h3>
             <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest max-w-xs">
-              Bạn cần thêm 5 tác phẩm được đánh giá 5 sao để tiến tới Cấp 5 (Master).
+              {t.portfolio.level_info}
             </p>
             <div className="mt-8 flex gap-2">
               {[1,2,3,4,5].map(i => (
@@ -734,24 +737,24 @@ export default function PortfolioPage() {
               exit={{ scale: 0.9, y: 20 }}
               className="bg-[#121212] w-full max-w-xl rounded-[40px] p-8 border border-white/10 relative z-10 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-8">Đăng Tác Phẩm Mới</h2>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-8">{t.portfolio.add_work}</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Chọn Nhân Viên</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.technician}</label>
                   <select 
                     required
                     value={newWork.technicianId}
                     onChange={e => setNewWork({...newWork, technicianId: e.target.value})}
                     className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
                   >
-                    <option value="" className="text-black">-- Chọn nhân viên --</option>
+                    <option value="" className="text-black">-- {t.portfolio.technician} --</option>
                     {technicians.map(tech => <option key={tech.uid} value={tech.uid} className="text-black">{tech.name}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 block">Hình ảnh (Có thể chọn nhiều)</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 block">{t.portfolio.images}</label>
                   <div className="grid grid-cols-3 gap-4">
                     {newWork.imageUrls?.map((url, idx) => (
                       <div key={idx} className="aspect-square rounded-2xl overflow-hidden relative group">
@@ -780,7 +783,7 @@ export default function PortfolioPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Danh mục</label>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.category}</label>
                     <select 
                       value={newWork.category}
                       onChange={e => setNewWork({...newWork, category: e.target.value})}
@@ -790,19 +793,27 @@ export default function PortfolioPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Thời gian (phút)</label>
-                    <input 
-                      type="text"
-                      placeholder="VD: 60"
-                      value={newWork.duration}
-                      onChange={e => setNewWork({...newWork, duration: e.target.value})}
-                      className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
-                    />
+                    <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.level}</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3].map(l => (
+                        <button 
+                          key={l}
+                          type="button"
+                          onClick={() => setNewWork({...newWork, level: l})}
+                          className={cn(
+                            "flex-1 py-3 rounded-xl text-[10px] font-black transition-all",
+                            newWork.level === l ? "bg-brand-accent text-white shadow-lg" : "bg-white/5 text-white/40"
+                          )}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Kỹ thuật (Enter để thêm)</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.techniques}</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {newWork.tags?.map(tag => (
                       <span key={tag} className="bg-brand-accent/20 text-brand-accent px-3 py-1 rounded-lg text-[10px] font-bold flex items-center gap-2">
@@ -821,12 +832,12 @@ export default function PortfolioPage() {
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Ghi chú kỹ thuật</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.tech_notes}</label>
                   <textarea 
                     value={newWork.notes}
                     onChange={e => setNewWork({...newWork, notes: e.target.value})}
                     className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors min-h-[100px]"
-                    placeholder="Những lưu ý khi thực hiện mẫu này..."
+                    placeholder={t.portfolio.placeholder_notes}
                   />
                 </div>
 
@@ -837,14 +848,14 @@ export default function PortfolioPage() {
                     className="flex-1 bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
                   >
                     {uploading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                    Tải Tác Phẩm Lên
+                    {t.portfolio.upload}
                   </button>
                   <button 
                     type="button"
                     onClick={() => setIsAdding(false)}
                     className="px-8 py-4 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 transition-all"
                   >
-                    Hủy
+                    {t.portfolio.cancel}
                   </button>
                 </div>
               </form>
@@ -907,14 +918,14 @@ export default function PortfolioPage() {
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-[10px] font-black uppercase tracking-widest bg-brand-accent px-3 py-1 rounded-full text-white">{selectedWork.category}</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full text-white/40">Cấp {selectedWork.level}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full text-white/40">{t.portfolio.level} {selectedWork.level}</span>
                 </div>
                 <p className="text-white/60 text-sm leading-relaxed mb-6">
-                  {selectedWork.notes || "Không có ghi chú thêm từ thợ."}
+                  {selectedWork.notes || t.portfolio.tech_notes}
                 </p>
                 
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white/20">Thực hiện bởi</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white/20">{t.portfolio.technician}</h4>
                   <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl">
                     <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center font-black text-white">
                       {selectedWork.technicianName[0]}
@@ -931,7 +942,7 @@ export default function PortfolioPage() {
                     onClick={() => handleDeleteWork(selectedWork.id)}
                     className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-red-500 transition-colors"
                   >
-                    <Trash2 size={14} /> Xóa bài đăng này
+                    <Trash2 size={14} /> {t.portfolio.delete}
                   </button>
                 </div>
               </div>
@@ -939,7 +950,7 @@ export default function PortfolioPage() {
               {/* Right: Evaluations */}
               <div className="flex flex-col">
                 <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
-                  <Star className="text-amber-400 fill-amber-400" /> Đánh giá & Góp ý
+                  <Star className="text-amber-400 fill-amber-400" /> {t.portfolio.grading}
                 </h3>
 
                 <div className="flex-1 space-y-6 overflow-y-auto pr-2 max-h-[400px]">
@@ -947,7 +958,7 @@ export default function PortfolioPage() {
                     selectedWork.evaluations.map((evalItem) => (
                       <div key={evalItem.id} className="bg-white/5 p-6 rounded-[32px] border border-white/5">
                         <div className="flex justify-between items-start mb-4">
-                          <div className="text-[10px] font-black text-brand-accent uppercase tracking-widest">{evalItem.evaluatorName}</div>
+                          <div className="text-[10px] font-black text-brand-accent uppercase tracking-widest">{t.portfolio.eval_by} {evalItem.evaluatorName}</div>
                           <div className="text-[9px] text-white/20">{new Date(evalItem.createdAt).toLocaleDateString()}</div>
                         </div>
                         
@@ -976,7 +987,7 @@ export default function PortfolioPage() {
                     ))
                   ) : (
                     <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[32px]">
-                      <p className="text-white/20 text-xs font-bold uppercase tracking-widest">Chưa có đánh giá nào.</p>
+                      <p className="text-white/20 text-xs font-bold uppercase tracking-widest">{t.portfolio.no_evals}</p>
                     </div>
                   )}
                 </div>
@@ -984,8 +995,8 @@ export default function PortfolioPage() {
                 {/* Admin Grading Form */}
                 <div className="mt-8 pt-8 border-t border-white/10">
                   <div className="mb-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">Chấm điểm & Nhận xét</h4>
-                    <p className="text-[9px] text-white/40 uppercase mb-4">Click vào ảnh để vẽ ghi chú kỹ thuật:</p>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">{t.portfolio.grading}</h4>
+                    <p className="text-[9px] text-white/40 uppercase mb-4">{t.portfolio.draw_tip}:</p>
                     <div className="flex flex-wrap gap-3">
                       {(selectedWork.imageUrls || [selectedWork.imageUrl]).map((url, i) => {
                         const annotated = evaluationForm.annotatedImageUrls[i];
@@ -1046,7 +1057,7 @@ export default function PortfolioPage() {
                       value={evaluationForm.feedback}
                       onChange={e => setEvaluationForm({...evaluationForm, feedback: e.target.value})}
                       className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
-                      placeholder="Viết lời khuyên hoặc góp ý kỹ thuật..."
+                      placeholder={t.portfolio.feedback}
                     />
                     <button 
                       onClick={() => handleAddEvaluation(selectedWork.id)}
@@ -1054,7 +1065,7 @@ export default function PortfolioPage() {
                       className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
                     >
                       {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
-                      Gửi Đánh Giá
+                      {t.portfolio.send_eval}
                     </button>
                   </div>
               </div>
