@@ -136,26 +136,58 @@ const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSav
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4">
-      <div className="flex gap-4 mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md">
-        <input type="color" value={brushColor} onChange={(e) => setBrushColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-none" />
-        <div className="flex gap-2">
-          {[2, 4, 8, 12].map(size => (
-            <button key={size} onClick={() => setBrushSize(size)} className={cn("w-8 h-8 rounded-lg font-bold text-[10px]", brushSize === size ? "bg-brand-accent text-white" : "bg-white/5 text-white/40")}>{size}</button>
-          ))}
+      {/* Drawing Toolbar */}
+      <div className="flex flex-wrap items-center justify-center gap-6 mb-8 bg-white/10 p-6 rounded-[32px] backdrop-blur-xl border border-white/10">
+        <div className="flex items-center gap-4">
+          <div className="text-[9px] font-black text-white/30 uppercase tracking-widest">Màu sắc</div>
+          <div className="flex gap-2">
+            {['#ff2d55', '#ffcc00', '#007aff', '#4cd964', '#ffffff'].map(c => (
+              <button 
+                key={c} 
+                onClick={() => setBrushColor(c)}
+                className={cn("w-8 h-8 rounded-full border-2 transition-all", brushColor === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100")}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
         </div>
-        <div className="w-px h-8 bg-white/10 mx-2" />
-        <button onClick={clearCanvas} className="p-2 text-white/40 hover:text-white transition-colors"><RotateCcw size={18} /></button>
-        <button onClick={handleSave} className="bg-brand-accent text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 flex items-center gap-2">
-          <Download size={14} /> {t.portfolio.save_draw}
-        </button>
-        <button onClick={onClose} className="bg-white/10 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-          <X size={14} /> {t.portfolio.close}
-        </button>
+
+        <div className="w-px h-8 bg-white/10" />
+
+        <div className="flex items-center gap-4">
+          <div className="text-[9px] font-black text-white/30 uppercase tracking-widest">Cỡ bút</div>
+          <div className="flex gap-2">
+            {[2, 4, 8, 12].map(s => (
+              <button 
+                key={s} 
+                onClick={() => setBrushSize(s)}
+                className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[10px] transition-all", brushSize === s ? "bg-brand-accent shadow-lg shadow-brand-accent/20" : "bg-white/5 text-white/40 hover:bg-white/10")}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="w-px h-8 bg-white/10" />
+
+        <div className="flex items-center gap-3">
+          <button onClick={clearCanvas} className="p-3 bg-white/5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all" title="Xóa hết">
+            <RotateCcw size={18} />
+          </button>
+          <button onClick={handleSave} className="bg-brand-accent text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+            <Download size={14} /> {t.portfolio.save_draw}
+          </button>
+          <button onClick={onClose} className="bg-white/10 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all">
+            <X size={14} /> {t.portfolio.close}
+          </button>
+        </div>
       </div>
       
-      <p className="text-[10px] text-white/40 uppercase tracking-widest mb-4 font-black">{t.portfolio.draw_tip}</p>
+      <p className="text-[10px] text-white/40 uppercase tracking-widest mb-6 font-black animate-pulse">{t.portfolio.draw_tip}</p>
       
-      <div className="relative bg-white/5 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+      {/* Canvas Area */}
+      <div className="relative bg-white/5 rounded-[40px] overflow-hidden shadow-2xl border border-white/10 p-2">
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -165,32 +197,8 @@ const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSav
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="cursor-crosshair"
+          className="cursor-crosshair rounded-[32px]"
         />
-      </div>
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Màu sắc</div>
-          {['#ff2d55', '#ffcc00', '#007aff', '#4cd964'].map(c => (
-            <button 
-              key={c} 
-              onClick={() => setBrushColor(c)}
-              className={cn("w-8 h-8 rounded-full border-2", brushColor === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50")}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-        <div className="w-px h-8 bg-white/10" />
-        <div className="flex items-center gap-3">
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Cỡ bút</div>
-          {[2, 4, 8, 12].map(s => (
-            <button 
-              key={s} 
-              onClick={() => setBrushSize(s)}
-              className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all", brushSize === s ? "bg-white/10 text-brand-accent" : "text-white/20 hover:text-white")}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );
