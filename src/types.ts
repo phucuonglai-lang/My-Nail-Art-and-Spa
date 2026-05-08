@@ -109,3 +109,30 @@ export interface SupplyItem {
   lastUpdated?: any;
 }
 
+export interface PortfolioWork {
+  id: string;
+  technicianId: string;
+  technicianName: string;
+  imageUrl: string;
+  tags: string[];
+  duration: string;
+  notes: string;
+  level: number;
+  category: string;
+  createdAt: any;
+  evaluations?: WorkEvaluation[];
+}
+
+export interface WorkEvaluation {
+  id: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  ratings: {
+    shape: number;
+    cuticle: number;
+    durability: number;
+    aesthetics: number;
+  };
+  feedback: string;
+  createdAt: any;
+}

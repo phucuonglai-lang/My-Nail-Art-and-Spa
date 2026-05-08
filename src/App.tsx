@@ -29,6 +29,7 @@ import Sidebar from './components/Sidebar';
 import AIChatbot from './components/AIChatbot';
 import ReportsPage from './components/ReportsPage';
 import SupplyPage from './components/SupplyPage';
+import PortfolioPage from './components/PortfolioPage';
 
 // --- Layouts ---
 
@@ -456,6 +457,11 @@ export default function App() {
               <Route path="/reports" element={
                 <SharedLayout>
                   <ReportsPage />
+                </SharedLayout>
+              } />
+              <Route path="/portfolio" element={
+                <SharedLayout>
+                  <PortfolioPage />
                 </SharedLayout>
               } />
               <Route path="/supply" element={

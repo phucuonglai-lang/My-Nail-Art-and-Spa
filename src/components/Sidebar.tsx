@@ -15,7 +15,8 @@ import {
   Sparkles,
   Zap,
   RefreshCw,
-  Package
+  Package,
+  Award
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -52,6 +53,14 @@ export default function Sidebar() {
       icon: ClipboardList, // Will use a standard icon for now
       color: 'text-emerald-500',
       path: '/reports',
+      children: []
+    },
+    {
+      id: 'portfolio',
+      label: 'Hồ sơ tay nghề',
+      icon: Award,
+      color: 'text-brand-accent',
+      path: '/portfolio',
       children: []
     },
     {
