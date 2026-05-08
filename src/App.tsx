@@ -82,8 +82,8 @@ function Navbar() {
         <span className="font-serif font-bold text-lg text-brand-text tracking-[2px] uppercase hidden sm:inline">NailPro Academy</span>
       </Link>
 
-      {/* Center: Navigation Links */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         <Link 
           to="/library" 
           className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-2 hover:text-brand-blue transition-all"
@@ -91,10 +91,7 @@ function Navbar() {
           <BookOpen size={14} className="text-brand-blue" />
           <span className="hidden sm:inline">{t.nav.library}</span>
         </Link>
-      </div>
-      
-      {/* Right: Actions */}
-      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+
         {profile?.role === 'admin' && (
           <Link 
             to="/admin" 
