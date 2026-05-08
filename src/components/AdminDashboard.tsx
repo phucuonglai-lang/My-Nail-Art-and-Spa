@@ -527,8 +527,8 @@ export default function AdminDashboard() {
     if (url.includes('youtube.com/embed/')) return url;
     
     let videoId = '';
-    const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(watchRegExp);
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
       videoId = match[2];

@@ -51,9 +51,9 @@ const AcrylicProcedure = () => {
 
   const getVideoId = (url: string) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    return (match && match[2].length === 11) ? match[2] : url;
   };
 
   const getPhaseSteps = (stepIndices: number[]) => {

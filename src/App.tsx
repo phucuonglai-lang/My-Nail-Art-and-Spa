@@ -335,9 +335,9 @@ function LessonPage() {
 
   const getVideoId = (url: string) => {
     if (!url) return '';
-    const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(watchRegExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url; // Trả về chính nó nếu là ID sẵn
   };
 
   if (loading) return (

@@ -70,9 +70,9 @@ const ProcedureTemplate: React.FC<ProcedureTemplateProps> = ({
 
   const getVideoId = (url: string) => {
     if (!url) return '';
-    const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(watchRegExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url;
   };
 
   // Get icons based on procedure ID or from props
