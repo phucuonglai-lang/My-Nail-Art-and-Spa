@@ -172,6 +172,25 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
+  const handleCourseFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 800 * 1024) {
+      alert("Hình ảnh quá lớn. Vui lòng chọn ảnh dưới 800KB.");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNewCourse({ ...newCourse, thumbnail: base64 });
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1184,15 +1203,62 @@ export default function AdminDashboard() {
                           </select>
                         </div>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.thumbnail}</label>
-                        <input 
-                          type="text" 
-                          value={newCourse.thumbnail} 
-                          onChange={e => setNewCourse({...newCourse, thumbnail: e.target.value})}
-                          placeholder="HTTPS Image URL"
-                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all placeholder:text-white/10"
-                        />
+                        <div className="flex flex-col gap-4">
+                          {newCourse.thumbnail ? (
+                            <div className="relative aspect-video rounded-[32px] overflow-hidden border border-white/10 group">
+                              <img src={newCourse.thumbnail} className="w-full h-full object-cover" alt="Preview" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
+                                <button 
+                                  onClick={() => setNewCourse({...newCourse, thumbnail: ''})}
+                                  className="p-4 bg-rose-500 text-white rounded-2xl hover:scale-110 transition-all shadow-xl"
+                                >
+                                  <Trash2 size={24} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleCourseFileChange}
+                                className="hidden"
+                                id="course-thumb-upload"
+                              />
+                              <label 
+                                htmlFor="course-thumb-upload"
+                                className={cn(
+                                  "w-full flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed rounded-[32px] cursor-pointer transition-all active:scale-[0.98]",
+                                  uploading ? "border-brand-accent bg-brand-accent/5 opacity-50" : "border-white/10 bg-white/5 text-white/10 hover:border-brand-accent/30 hover:text-brand-accent"
+                                )}
+                              >
+                                {uploading ? (
+                                  <RefreshCw className="animate-spin" size={32} />
+                                ) : (
+                                  <>
+                                    <ImageIcon size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Chọn ảnh bìa từ máy</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          )}
+                          
+                          <div className="relative flex items-center justify-center py-2">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <span className="relative px-6 bg-brand-card text-[9px] font-black uppercase tracking-[4px] text-white/20">Hoặc dán URL ảnh</span>
+                          </div>
+
+                          <input 
+                            type="text" 
+                            value={newCourse.thumbnail} 
+                            onChange={e => setNewCourse({...newCourse, thumbnail: e.target.value})}
+                            placeholder="HTTPS Image URL"
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all placeholder:text-white/10"
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
                         <button 
