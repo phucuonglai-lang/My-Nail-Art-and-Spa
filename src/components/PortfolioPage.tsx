@@ -21,10 +21,175 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   BarChart3,
-  Users
+  Users,
+  Pencil,
+  RotateCcw,
+  Eraser,
+  Download
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
+
+// --- Annotation Component ---
+const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSave: (dataUrl: string) => void, onClose: () => void }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [brushColor, setBrushColor] = useState('#ff2d55');
+  const [brushSize, setBrushSize] = useState(4);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imageUrl;
+    img.onload = () => {
+      // Set canvas size to match image aspect ratio but fit in viewport
+      const maxWidth = window.innerWidth * 0.8;
+      const maxHeight = window.innerHeight * 0.7;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = height * (maxWidth / width);
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width = width * (maxHeight / height);
+        height = maxHeight;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Set initial brush style
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    };
+  }, [imageUrl]);
+
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    draw(e);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx?.beginPath(); // Reset path
+    }
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+
+    let x, y;
+    if ('touches' in e) {
+      const rect = canvas.getBoundingClientRect();
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      const rect = canvas.getBoundingClientRect();
+      x = (e as React.MouseEvent).clientX - rect.left;
+      y = (e as React.MouseEvent).clientY - rect.top;
+    }
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      onSave(canvas.toDataURL('image/jpeg', 0.8));
+    }
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
+      <div className="w-full max-w-4xl flex items-center justify-between mb-6">
+        <h2 className="text-xl font-black text-white uppercase tracking-tighter">Khoanh tròn lỗi kỹ thuật</h2>
+        <div className="flex gap-4">
+          <button onClick={clearCanvas} className="p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all">
+            <RotateCcw size={20} />
+          </button>
+          <button onClick={handleSave} className="px-8 py-3 bg-brand-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/30">
+            Lưu ảnh đã vẽ
+          </button>
+          <button onClick={onClose} className="p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all">
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      <div className="relative bg-white/5 p-2 rounded-[32px] border border-white/10 shadow-2xl overflow-hidden cursor-crosshair">
+        <canvas 
+          ref={canvasRef}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseOut={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          className="rounded-[24px] touch-none"
+        />
+      </div>
+      
+      <div className="mt-8 flex gap-6 bg-white/5 p-4 rounded-3xl border border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Màu sắc</div>
+          {['#ff2d55', '#ffcc00', '#007aff', '#4cd964'].map(c => (
+            <button 
+              key={c} 
+              onClick={() => setBrushColor(c)}
+              className={cn("w-8 h-8 rounded-full border-2", brushColor === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50")}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+        <div className="w-px h-8 bg-white/10" />
+        <div className="flex items-center gap-3">
+          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Cỡ bút</div>
+          {[2, 4, 8, 12].map(s => (
+            <button 
+              key={s} 
+              onClick={() => setBrushSize(s)}
+              className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all", brushSize === s ? "bg-white/10 text-brand-accent" : "text-white/20 hover:text-white")}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PortfolioPage() {
   const { profile } = useAuth();
@@ -124,12 +289,14 @@ export default function PortfolioPage() {
   };
 
   const [selectedWork, setSelectedWork] = useState<PortfolioWork | null>(null);
+  const [showAnnotator, setShowAnnotator] = useState(false);
   const [evaluationForm, setEvaluationForm] = useState({
     shape: 5,
     cuticle: 5,
     durability: 5,
     aesthetics: 5,
-    feedback: ''
+    feedback: '',
+    annotatedImageUrl: ''
   });
 
   const handleAddEvaluation = async (workId: string) => {
@@ -148,6 +315,7 @@ export default function PortfolioPage() {
           aesthetics: evaluationForm.aesthetics
         },
         feedback: evaluationForm.feedback,
+        annotatedImageUrl: evaluationForm.annotatedImageUrl,
         createdAt: new Date().toISOString()
       };
 
@@ -156,7 +324,7 @@ export default function PortfolioPage() {
       
       await updateDoc(workRef, { evaluations: updatedEvals });
       setSelectedWork(null);
-      setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '' });
+      setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '', annotatedImageUrl: '' });
       fetchWorks();
     } catch (error) {
       alert("Error saving evaluation");
@@ -531,6 +699,13 @@ export default function PortfolioPage() {
                           <div className="text-[10px] font-black text-brand-accent uppercase tracking-widest">{evalItem.evaluatorName}</div>
                           <div className="text-[9px] text-white/20">{new Date(evalItem.createdAt).toLocaleDateString()}</div>
                         </div>
+                        
+                        {evalItem.annotatedImageUrl && (
+                          <div className="aspect-video rounded-2xl overflow-hidden mb-4 border border-white/10">
+                            <img src={evalItem.annotatedImageUrl} alt="Góp ý hình ảnh" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           {Object.entries(evalItem.ratings).map(([key, val]) => (
                             <div key={key} className="flex justify-between items-center">
@@ -554,7 +729,28 @@ export default function PortfolioPage() {
                 {/* Admin Grading Form */}
                 {profile?.role === 'admin' && (
                   <div className="mt-8 pt-8 border-t border-white/10">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-6">Chấm điểm & Nhận xét</h4>
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent">Chấm điểm & Nhận xét</h4>
+                      <button 
+                        onClick={() => setShowAnnotator(true)}
+                        className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-white hover:bg-brand-accent transition-all"
+                      >
+                        <Pencil size={12} /> {evaluationForm.annotatedImageUrl ? 'Sửa hình đã vẽ' : 'Vẽ/Góp ý trên ảnh'}
+                      </button>
+                    </div>
+                    
+                    {evaluationForm.annotatedImageUrl && (
+                      <div className="mb-6 relative group">
+                        <img src={evaluationForm.annotatedImageUrl} className="w-full aspect-video object-cover rounded-2xl border border-brand-accent/50" alt="" />
+                        <button 
+                          onClick={() => setEvaluationForm({...evaluationForm, annotatedImageUrl: ''})}
+                          className="absolute top-2 right-2 p-1 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-6 mb-6">
                       {['shape', 'cuticle', 'durability', 'aesthetics'].map((field) => (
                         <div key={field}>
@@ -597,6 +793,18 @@ export default function PortfolioPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Image Annotator Tool */}
+      {showAnnotator && selectedWork && (
+        <ImageAnnotator 
+          imageUrl={selectedWork.imageUrl}
+          onClose={() => setShowAnnotator(false)}
+          onSave={(dataUrl) => {
+            setEvaluationForm({ ...evaluationForm, annotatedImageUrl: dataUrl });
+            setShowAnnotator(false);
+          }}
+        />
+      )}
     </div>
   );
 }

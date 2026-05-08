@@ -134,5 +134,6 @@ export interface WorkEvaluation {
     aesthetics: number;
   };
   feedback: string;
+  annotatedImageUrl?: string;
   createdAt: any;
 }
