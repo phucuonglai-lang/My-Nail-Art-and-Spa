@@ -321,33 +321,43 @@ export default function PortfolioPage() {
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
-    setUploading(true);
-    const rawImages: string[] = [];
-    let processed = 0;
 
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target?.result as string;
-        const compressed = await compressImage(base64);
-        rawImages.push(compressed);
-        processed++;
-        
-        if (processed === files.length) {
-          setNewWork(prev => ({ 
-            ...prev, 
-            imageUrls: [...(prev.imageUrls || []), ...rawImages],
-            imageUrl: prev.imageUrl || rawImages[0]
-          }));
-          setUploading(false);
-        }
+    setUploading(true);
+    
+    try {
+      const processFile = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            try {
+              const base64 = event.target?.result as string;
+              const compressed = await compressImage(base64);
+              resolve(compressed);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(new Error("File reading failed"));
+          reader.readAsDataURL(file);
+        });
       };
-      reader.readAsDataURL(file);
-    });
+
+      const newImages = await Promise.all(Array.from(files).map(processFile));
+      setNewWork(prev => ({
+        ...prev,
+        imageUrls: [...(prev.imageUrls || []), ...newImages]
+      }));
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại.");
+    } finally {
+      setUploading(false);
+      // Clear the input so the same file can be selected again
+      e.target.value = '';
+    }
   };
 
   const removeUploadImage = (idx: number) => {
@@ -377,8 +387,11 @@ export default function PortfolioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!newWork.imageUrls || newWork.imageUrls.length === 0) || !newWork.technicianId) {
-      alert("Vui lòng chọn nhân viên và tải ít nhất 1 ảnh lên");
+    const hasImages = newWork.imageUrls && newWork.imageUrls.length > 0;
+    const hasTechnician = newWork.technicianId || newWork.technicianName;
+
+    if (!hasImages || !hasTechnician) {
+      alert("Vui lòng chọn hoặc nhập tên nhân viên và tải ít nhất 1 ảnh lên");
       return;
     }
 
