@@ -117,7 +117,7 @@ const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSav
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      onSave(canvas.toDataURL('image/jpeg', 0.8));
+      onSave(canvas.toDataURL('image/jpeg', 0.6));
     }
   };
 
@@ -272,24 +272,59 @@ export default function PortfolioPage() {
     }
   };
 
+  const compressImage = (base64: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Compress to 60% quality
+      };
+    });
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
     setUploading(true);
-    const newImages: string[] = [];
+    const rawImages: string[] = [];
     let processed = 0;
 
     Array.from(files).forEach(file => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        newImages.push(event.target?.result as string);
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        const compressed = await compressImage(base64);
+        rawImages.push(compressed);
         processed++;
+        
         if (processed === files.length) {
           setNewWork(prev => ({ 
             ...prev, 
-            imageUrls: [...(prev.imageUrls || []), ...newImages],
-            imageUrl: prev.imageUrl || newImages[0] // Set first image as thumbnail if none exists
+            imageUrls: [...(prev.imageUrls || []), ...rawImages],
+            imageUrl: prev.imageUrl || rawImages[0]
           }));
           setUploading(false);
         }
@@ -343,8 +378,9 @@ export default function PortfolioPage() {
       setIsAdding(false);
       setNewWork({ imageUrl: '', imageUrls: [], tags: [], duration: '', notes: '', category: 'Manicure', level: 1, technicianId: '', technicianName: '' });
       fetchWorks();
-    } catch (error) {
-      alert("Error saving work");
+    } catch (error: any) {
+      console.error("Save Work Error:", error);
+      alert("Lỗi lưu tác phẩm: " + (error.message?.includes('too large') ? "Dung lượng ảnh quá lớn, hãy chọn ít ảnh hơn hoặc ảnh nhỏ hơn." : error.message || "Lỗi không xác định"));
     } finally {
       setUploading(false);
     }
