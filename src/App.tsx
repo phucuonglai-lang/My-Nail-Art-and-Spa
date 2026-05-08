@@ -26,7 +26,6 @@ import HomePage from './components/HomePage';
 import LibraryPage from './components/LibraryPage';
 import ProceduresPage from './components/ProceduresPage';
 import Sidebar from './components/Sidebar';
-import AIChatbot from './components/AIChatbot';
 import ReportsPage from './components/ReportsPage';
 import SupplyPage from './components/SupplyPage';
 import PortfolioPage from './components/PortfolioPage';
@@ -513,7 +512,6 @@ export default function App() {
                 </SharedLayout>
               } />
             </Routes>
-            <AIChatbot />
           </div>
         </HashRouter>
       </AuthProvider>
