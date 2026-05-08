@@ -196,10 +196,16 @@ export default function PortfolioPage() {
   const { t } = useLanguage();
   const [works, setWorks] = useState<PortfolioWork[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'timeline' | 'upload' | 'analytics'>('timeline');
+  const [view, setView] = useState<'timeline' | 'analytics'>('timeline');
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   
+  // Hierarchical States
+  const [technicians, setTechnicians] = useState<{uid: string, name: string}[]>([]);
+  const [selectedTech, setSelectedTech] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
   // Form states
   const [newWork, setNewWork] = useState<Partial<PortfolioWork>>({
     imageUrl: '',
@@ -207,30 +213,56 @@ export default function PortfolioPage() {
     duration: '',
     notes: '',
     category: 'Manicure',
-    level: 1
+    level: 1,
+    technicianId: '',
+    technicianName: ''
   });
 
   const categories = ['Manicure', 'Pedicure', 'Gel-X', 'Acrylic', 'Dipping'];
+  const months = [
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+  ];
   const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
+    fetchTechnicians();
+  }, []);
+
+  useEffect(() => {
     fetchWorks();
-  }, [profile]);
+  }, [selectedTech, selectedMonth, selectedYear]);
+
+  const fetchTechnicians = async () => {
+    try {
+      const q = query(collection(db, 'users'), where('role', '==', 'student'));
+      const snap = await getDocs(q);
+      const list = snap.docs.map(doc => ({ uid: doc.id, name: doc.data().displayName }));
+      setTechnicians(list);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchWorks = async () => {
-    if (!profile) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
-      // If admin, fetch all, if student, fetch own
-      const q = profile.role === 'admin' 
-        ? query(collection(db, 'portfolios'), orderBy('createdAt', 'desc'))
-        : query(collection(db, 'portfolios'), where('technicianId', '==', profile.uid), orderBy('createdAt', 'desc'));
+      let q = query(collection(db, 'portfolios'), orderBy('createdAt', 'desc'));
+      
+      if (selectedTech !== 'all') {
+        q = query(collection(db, 'portfolios'), where('technicianId', '==', selectedTech), orderBy('createdAt', 'desc'));
+      }
       
       const snap = await getDocs(q);
-      setWorks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioWork)));
+      let allWorks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioWork));
+      
+      // Filter by month/year on client side for simplicity or use complex query
+      const filtered = allWorks.filter(w => {
+        const date = w.createdAt?.toDate ? w.createdAt.toDate() : new Date(w.createdAt);
+        return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+      });
+
+      setWorks(filtered);
     } catch (error) {
       console.error("Fetch Portfolio Error:", error);
     } finally {
@@ -267,19 +299,23 @@ export default function PortfolioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile || !newWork.imageUrl) return;
+    if (!newWork.imageUrl || !newWork.technicianId) {
+      alert("Vui lòng chọn nhân viên và tải ảnh lên");
+      return;
+    }
 
     setUploading(true);
     try {
+      const selectedTechnician = technicians.find(t => t.uid === newWork.technicianId);
+      
       await addDoc(collection(db, 'portfolios'), {
         ...newWork,
-        technicianId: profile.uid,
-        technicianName: profile.displayName || 'Technician',
+        technicianName: selectedTechnician?.name || 'Technician',
         createdAt: serverTimestamp(),
         evaluations: []
       });
       setIsAdding(false);
-      setNewWork({ imageUrl: '', tags: [], duration: '', notes: '', category: 'Manicure', level: 1 });
+      setNewWork({ imageUrl: '', tags: [], duration: '', notes: '', category: 'Manicure', level: 1, technicianId: '', technicianName: '' });
       fetchWorks();
     } catch (error) {
       alert("Error saving work");
@@ -342,97 +378,99 @@ export default function PortfolioPage() {
     return total / work.evaluations.length;
   };
 
-  if (loading) return (
+  if (loading && works.length === 0 && technicians.length === 0) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
     </div>
   );
 
-  if (!profile) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-20 h-20 bg-white/5 rounded-[32px] flex items-center justify-center mb-6">
-        <Award size={40} className="text-white/20" />
-      </div>
-      <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Truy cập bị hạn chế</h2>
-      <p className="text-white/40 text-xs font-bold uppercase tracking-widest max-w-xs mb-8">
-        Vui lòng đăng nhập để xem hồ sơ tay nghề và bảng đánh giá của bạn.
-      </p>
-      <button 
-        onClick={async () => {
-          try {
-            const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-          } catch (error: any) {
-            console.error("Login Error:", error);
-            alert("Lỗi đăng nhập: " + (error.message || "Vui lòng kiểm tra lại kết nối mạng hoặc trình duyệt (cho phép cửa sổ bật lên - popup)"));
-          }
-        }}
-        className="bg-brand-accent text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 hover:scale-105 transition-all"
-      >
-        Đăng nhập ngay
-      </button>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6 max-w-6xl mx-auto">
-      <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">
-            Hồ Sơ Tay Nghề
-          </h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
-            Technician Portfolio & Evaluation System
-          </p>
-        </div>
-        
-        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl">
-          <button 
-            onClick={() => setView('timeline')}
-            className={cn(
-              "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-              view === 'timeline' ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:text-white"
-            )}
-          >
-            <History size={14} className="inline mr-2" /> Timeline
-          </button>
-          <button 
-            onClick={() => setView('analytics')}
-            className={cn(
-              "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-              view === 'analytics' ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:text-white"
-            )}
-          >
-            <TrendingUp size={14} className="inline mr-2" /> Tiến Độ
-          </button>
-        </div>
-      </header>
-
-      {view === 'timeline' && (
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white/50 uppercase tracking-widest flex items-center gap-3">
-              <ImageIcon size={20} className="text-brand-accent" /> Tác Phẩm Gần Đây
+    <div className="min-h-screen pt-24 pb-12 px-6 max-w-full">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Sidebar: Technicians */}
+        <aside className="lg:w-80 shrink-0">
+          <div className="bg-white/5 rounded-[40px] p-8 border border-white/5 sticky top-24">
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3">
+              <Users className="text-brand-accent" /> Nhân Viên
             </h2>
-            <button 
-              onClick={() => setIsAdding(true)}
-              className="bg-brand-accent text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-brand-accent/20"
-            >
-              <Plus size={16} /> Đăng Tác Phẩm
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
-              {works.map((work, idx) => (
-                <motion.div
-                  key={work.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="bg-white/5 rounded-[32px] border border-white/5 overflow-hidden group hover:border-brand-accent/30 transition-all hover:shadow-2xl cursor-pointer"
-                  onClick={() => setSelectedWork(work)}
+            <div className="space-y-2">
+              <button 
+                onClick={() => setSelectedTech('all')}
+                className={cn(
+                  "w-full text-left p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  selectedTech === 'all' ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                Tất cả nhân viên
+              </button>
+              {technicians.map(tech => (
+                <button 
+                  key={tech.uid}
+                  onClick={() => setSelectedTech(tech.uid)}
+                  className={cn(
+                    "w-full text-left p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    selectedTech === tech.uid ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:bg-white/5 hover:text-white"
+                  )}
                 >
+                  {tech.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">
+                {selectedTech === 'all' ? 'Tổng Hợp Hồ Sơ' : technicians.find(t => t.uid === selectedTech)?.name}
+              </h1>
+              <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+                Quản lý tay nghề theo tháng & nhân viên
+              </p>
+            </div>
+            
+            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl overflow-x-auto max-w-md no-scrollbar">
+              {months.map((m, idx) => (
+                <button 
+                  key={m}
+                  onClick={() => setSelectedMonth(idx)}
+                  className={cn(
+                    "px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                    selectedMonth === idx ? "bg-brand-accent text-white shadow-lg" : "text-white/40 hover:text-white"
+                  )}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </header>
+
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white/50 uppercase tracking-widest flex items-center gap-3">
+                <ImageIcon size={20} className="text-brand-accent" /> Tác Phẩm {months[selectedMonth]}
+              </h2>
+              <button 
+                onClick={() => setIsAdding(true)}
+                className="bg-brand-accent text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-brand-accent/20"
+              >
+                <Plus size={16} /> Đăng Tác Phẩm Mới
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              <AnimatePresence>
+                {works.map((work, idx) => (
+                  <motion.div
+                    key={work.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-white/5 rounded-[32px] border border-white/5 overflow-hidden group hover:border-brand-accent/30 transition-all hover:shadow-2xl cursor-pointer"
+                    onClick={() => setSelectedWork(work)}
+                  >
                   <div className="aspect-square relative overflow-hidden">
                     <img src={work.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-bold text-white uppercase tracking-widest flex items-center gap-1.5 border border-white/10">
@@ -547,6 +585,19 @@ export default function PortfolioPage() {
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-8">Đăng Tác Phẩm Mới</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">Chọn Nhân Viên</label>
+                  <select 
+                    required
+                    value={newWork.technicianId}
+                    onChange={e => setNewWork({...newWork, technicianId: e.target.value})}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
+                  >
+                    <option value="">-- Chọn nhân viên --</option>
+                    {technicians.map(tech => <option key={tech.uid} value={tech.uid}>{tech.name}</option>)}
+                  </select>
+                </div>
+
                 <div className="aspect-square bg-white/5 rounded-[32px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer">
                   {newWork.imageUrl ? (
                     <img src={newWork.imageUrl} className="w-full h-full object-cover" alt="" />
