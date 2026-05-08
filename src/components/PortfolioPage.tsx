@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { PortfolioWork, WorkEvaluation } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -137,6 +138,15 @@ export default function PortfolioPage() {
       <p className="text-white/40 text-xs font-bold uppercase tracking-widest max-w-xs mb-8">
         Vui lòng đăng nhập để xem hồ sơ tay nghề và bảng đánh giá của bạn.
       </p>
+      <button 
+        onClick={() => {
+          const provider = new GoogleAuthProvider();
+          signInWithPopup(auth, provider);
+        }}
+        className="bg-brand-accent text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 hover:scale-105 transition-all"
+      >
+        Đăng nhập ngay
+      </button>
     </div>
   );
 
