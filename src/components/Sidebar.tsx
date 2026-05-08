@@ -16,7 +16,9 @@ import {
   Zap,
   RefreshCw,
   Package,
-  Award
+  Package,
+  Award,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -26,6 +28,14 @@ export default function Sidebar() {
   const [expanded, setExpanded] = useState<string | null>('nails');
 
   const menuItems = [
+    {
+      id: 'library',
+      label: t.nav.library,
+      icon: BookOpen,
+      color: 'text-brand-blue',
+      path: '/library',
+      children: []
+    },
     {
       id: 'nails',
       label: t.nav.sidebar.nails,

@@ -84,14 +84,6 @@ function Navbar() {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-        <Link 
-          to="/library" 
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-2 hover:text-brand-blue transition-all"
-        >
-          <BookOpen size={14} className="text-brand-blue" />
-          <span className="hidden sm:inline">{t.nav.library}</span>
-        </Link>
-
         {profile?.role === 'admin' && (
           <Link 
             to="/admin" 
