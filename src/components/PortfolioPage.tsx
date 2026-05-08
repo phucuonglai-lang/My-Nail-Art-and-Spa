@@ -241,7 +241,7 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     fetchTechnicians();
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
     fetchWorks();
@@ -249,16 +249,17 @@ export default function PortfolioPage() {
 
   const fetchTechnicians = async () => {
     try {
+      // Try to fetch technicians (students)
       const q = query(collection(db, 'users'), where('role', '==', 'student'));
       const snap = await getDocs(q);
-      const list = snap.docs.map(doc => ({ uid: doc.id, name: doc.data().displayName }));
+      const list = snap.docs.map(doc => ({ 
+        uid: doc.id, 
+        name: doc.data().displayName || doc.data().name || 'Không tên' 
+      })).filter(t => t.name);
       
-      // If we got no technicians from users collection (likely due to guest rules),
-      // we can still allow the page to function.
       setTechnicians(list);
     } catch (e) {
       console.error("Fetch Technicians Error (likely guest restriction):", e);
-      // Don't set technicians, keep it empty and the UI will handle it
     }
   };
 
@@ -755,24 +756,43 @@ export default function PortfolioPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2 block">{t.portfolio.technician}</label>
-                  <select 
-                    required={technicians.length > 0}
-                    value={newWork.technicianId}
-                    onChange={e => setNewWork({...newWork, technicianId: e.target.value})}
-                    className="w-full bg-white/10 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors mb-3"
-                  >
-                    <option value="" className="text-black">-- {t.portfolio.technician} --</option>
-                    {technicians.map(tech => <option key={tech.uid} value={tech.uid} className="text-black">{tech.name}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select 
+                      required={technicians.length > 0 && !newWork.technicianName}
+                      value={newWork.technicianId}
+                      onChange={e => {
+                        const tech = technicians.find(t => t.uid === e.target.value);
+                        setNewWork({
+                          ...newWork, 
+                          technicianId: e.target.value,
+                          technicianName: tech ? tech.name : ''
+                        });
+                      }}
+                      className="w-full bg-white/10 border border-white/10 rounded-xl p-4 text-white text-sm font-bold outline-none focus:border-brand-accent transition-all mb-3 appearance-none"
+                      style={{ WebkitAppearance: 'none' }}
+                    >
+                      <option value="" className="bg-[#121212] text-white">-- {t.portfolio.technician} --</option>
+                      {technicians.map(tech => (
+                        <option key={tech.uid} value={tech.uid} className="bg-[#121212] text-white">
+                          {tech.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-4 pointer-events-none text-white/20">
+                      <ChevronDown size={18} />
+                    </div>
+                  </div>
                   
-                  {/* Fallback for manual technician name if list is empty or guest wants to enter new name */}
-                  <input 
-                    type="text"
-                    placeholder="Hoặc nhập tên nhân viên..."
-                    value={newWork.technicianName}
-                    onChange={e => setNewWork({...newWork, technicianName: e.target.value})}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-brand-accent transition-colors"
-                  />
+                  <div className="relative">
+                    <div className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2 px-1">Hoặc nhập tên mới</div>
+                    <input 
+                      type="text"
+                      placeholder="Nhập tên nhân viên..."
+                      value={newWork.technicianName}
+                      onChange={e => setNewWork({...newWork, technicianName: e.target.value, technicianId: ''})}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-white text-sm font-bold outline-none focus:border-brand-accent transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-4">
