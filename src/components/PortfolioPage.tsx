@@ -52,7 +52,10 @@ export default function PortfolioPage() {
   }, [profile]);
 
   const fetchWorks = async () => {
-    if (!profile) return;
+    if (!profile) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       // If admin, fetch all, if student, fetch own
@@ -119,9 +122,21 @@ export default function PortfolioPage() {
     }
   };
 
-  if (loading && works.length === 0) return (
+  if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
+    </div>
+  );
+
+  if (!profile) return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+      <div className="w-20 h-20 bg-white/5 rounded-[32px] flex items-center justify-center mb-6">
+        <Award size={40} className="text-white/20" />
+      </div>
+      <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Truy cập bị hạn chế</h2>
+      <p className="text-white/40 text-xs font-bold uppercase tracking-widest max-w-xs mb-8">
+        Vui lòng đăng nhập để xem hồ sơ tay nghề và bảng đánh giá của bạn.
+      </p>
     </div>
   );
 
