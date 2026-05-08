@@ -336,14 +336,13 @@ export default function PortfolioPage() {
   });
 
   const handleAddEvaluation = async (workId: string) => {
-    if (!profile || profile.role !== 'admin') return;
     setUploading(true);
     try {
       const workRef = doc(db, 'portfolios', workId);
       const newEval: WorkEvaluation = {
         id: crypto.randomUUID(),
-        evaluatorId: profile.uid,
-        evaluatorName: profile.displayName || 'Admin',
+        evaluatorId: profile?.uid || 'admin-local',
+        evaluatorName: profile?.displayName || 'Quản lý',
         ratings: {
           shape: evaluationForm.shape,
           cuticle: evaluationForm.cuticle,
@@ -363,7 +362,30 @@ export default function PortfolioPage() {
       setEvaluationForm({ shape: 5, cuticle: 5, durability: 5, aesthetics: 5, feedback: '', annotatedImageUrl: '' });
       fetchWorks();
     } catch (error) {
-      alert("Error saving evaluation");
+      console.error(error);
+      alert("Lỗi lưu đánh giá. Vui lòng kiểm tra kết nối mạng.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAddTechnician = async () => {
+    const name = prompt("Nhập tên nhân viên mới:");
+    if (!name) return;
+    
+    setUploading(true);
+    try {
+      const newId = 'tech-' + Date.now();
+      await addDoc(collection(db, 'users'), {
+        uid: newId,
+        displayName: name,
+        role: 'student',
+        createdAt: new Date().toISOString(),
+        enrolledCourses: []
+      });
+      fetchTechnicians();
+    } catch (e) {
+      alert("Lỗi thêm nhân viên");
     } finally {
       setUploading(false);
     }
@@ -390,9 +412,18 @@ export default function PortfolioPage() {
         {/* Left Sidebar: Technicians */}
         <aside className="lg:w-80 shrink-0">
           <div className="bg-white/5 rounded-[40px] p-8 border border-white/5 sticky top-24">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3">
-              <Users className="text-brand-accent" /> Nhân Viên
-            </h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                <Users className="text-brand-accent" /> Nhân Viên
+              </h2>
+              <button 
+                onClick={handleAddTechnician}
+                className="w-8 h-8 bg-brand-accent/20 text-brand-accent rounded-full flex items-center justify-center hover:bg-brand-accent hover:text-white transition-all"
+                title="Thêm nhân viên mới"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
             <div className="space-y-2">
               <button 
                 onClick={() => setSelectedTech('all')}
