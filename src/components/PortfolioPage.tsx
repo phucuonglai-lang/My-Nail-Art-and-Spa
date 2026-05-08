@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Eraser,
   Download,
+  Trash2,
   X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -395,6 +396,22 @@ export default function PortfolioPage() {
     }
   }, [selectedWork]);
   const [showAnnotator, setShowAnnotator] = useState<{show: boolean, imageUrl: string, idx?: number}>({ show: false, imageUrl: '' });
+  const handleDeleteWork = async (workId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.")) return;
+    
+    setUploading(true);
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'portfolios', workId));
+      setSelectedWork(null);
+      fetchWorks();
+    } catch (error) {
+      alert("Lỗi khi xóa bài đăng.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const [evaluationForm, setEvaluationForm] = useState({
     shape: 5,
     cuticle: 5,
@@ -628,6 +645,18 @@ export default function PortfolioPage() {
                         Chi tiết <ChevronRight size={10} />
                       </button>
                     </div>
+
+                    {/* Quick Delete for Admin */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteWork(work.id);
+                      }}
+                      className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
+                      title="Xóa nhanh"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </motion.div>
               ))}
@@ -895,6 +924,15 @@ export default function PortfolioPage() {
                       <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Technician</div>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-white/5">
+                  <button 
+                    onClick={() => handleDeleteWork(selectedWork.id)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={14} /> Xóa bài đăng này
+                  </button>
                 </div>
               </div>
 
