@@ -516,7 +516,7 @@ export default function PortfolioPage() {
     return total / work.evaluations.length;
   };
 
-  if (loading && works.length === 0 && technicians.length === 0) return (
+  if (loading && works.length === 0) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
     </div>
@@ -699,6 +699,7 @@ export default function PortfolioPage() {
             )}
           </div>
         </div>
+      </div>
 
       {view === 'analytics' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1144,8 +1145,7 @@ export default function PortfolioPage() {
           }}
         />
       )}
-        </div>
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
