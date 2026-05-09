@@ -1123,7 +1123,7 @@ export default function PortfolioPage() {
                       {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
                       {t.portfolio.send_eval}
                     </button>
-                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1145,7 +1145,7 @@ export default function PortfolioPage() {
           }}
         />
       )}
-      </AnimatePresence>
+    </div>
     </div>
   );
 }
