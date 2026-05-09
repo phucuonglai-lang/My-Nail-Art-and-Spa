@@ -206,8 +206,9 @@ const ImageAnnotator = ({ imageUrl, onSave, onClose }: { imageUrl: string, onSav
 };
 
 export default function PortfolioPage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { t } = useLanguage();
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff';
   const [works, setWorks] = useState<PortfolioWork[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'timeline' | 'analytics'>('timeline');
@@ -533,13 +534,15 @@ export default function PortfolioPage() {
               <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                 <Users className="text-brand-accent" /> Nhân Viên
               </h2>
-              <button 
-                onClick={handleAddTechnician}
-                className="w-8 h-8 bg-brand-accent/20 text-brand-accent rounded-full flex items-center justify-center hover:bg-brand-accent hover:text-white transition-all"
-                title="Thêm nhân viên mới"
-              >
-                <Plus size={16} />
-              </button>
+              {isAdmin && (
+                <button 
+                  onClick={handleAddTechnician}
+                  className="w-8 h-8 bg-brand-accent/20 text-brand-accent rounded-full flex items-center justify-center hover:bg-brand-accent hover:text-white transition-all"
+                  title="Thêm nhân viên mới"
+                >
+                  <Plus size={16} />
+                </button>
+              )}
             </div>
             <div className="space-y-2">
               <button 
@@ -678,16 +681,18 @@ export default function PortfolioPage() {
                     </div>
 
                     {/* Quick Delete for Admin */}
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteWork(work.id);
-                      }}
-                      className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
-                      title={t.portfolio.quick_delete}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {isAdmin && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteWork(work.id);
+                        }}
+                        className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
+                        title={t.portfolio.quick_delete}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -994,14 +999,16 @@ export default function PortfolioPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-white/5">
-                  <button 
-                    onClick={() => handleDeleteWork(selectedWork.id)}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={14} /> {t.portfolio.delete}
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="mt-8 pt-8 border-t border-white/5">
+                    <button 
+                      onClick={() => handleDeleteWork(selectedWork.id)}
+                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={14} /> {t.portfolio.delete}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right: Evaluations */}
@@ -1050,81 +1057,84 @@ export default function PortfolioPage() {
                 </div>
 
                 {/* Admin Grading Form */}
-                <div className="mt-8 pt-8 border-t border-white/10">
-                  <div className="mb-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">{t.portfolio.grading}</h4>
-                    <p className="text-[9px] text-white/40 uppercase mb-4">{t.portfolio.draw_tip}:</p>
-                    <div className="flex flex-wrap gap-3">
-                      {(selectedWork.imageUrls || [selectedWork.imageUrl]).map((url, i) => {
-                        const annotated = evaluationForm.annotatedImageUrls[i];
-                        return (
-                          <div key={i} className="relative group">
-                            <button 
-                              onClick={() => setShowAnnotator({ show: true, imageUrl: url, idx: i })}
-                              className={cn(
-                                "w-16 h-16 rounded-xl overflow-hidden border-2 transition-all",
-                                annotated ? "border-brand-accent shadow-lg shadow-brand-accent/20" : "border-white/10 hover:border-white/30"
-                              )}
-                            >
-                              <img src={annotated || url} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Pencil size={12} className="text-white" />
-                              </div>
-                            </button>
-                            {annotated && (
+                {isAdmin && (
+                  <div className="mt-8 pt-8 border-t border-white/10">
+                    <div className="mb-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">{t.portfolio.grading}</h4>
+                      <p className="text-[9px] text-white/40 uppercase mb-4">{t.portfolio.draw_tip}:</p>
+                      <div className="flex flex-wrap gap-3">
+                        {(selectedWork.imageUrls || [selectedWork.imageUrl]).map((url, i) => {
+                          const annotated = evaluationForm.annotatedImageUrls[i];
+                          return (
+                            <div key={i} className="relative group">
                               <button 
-                                onClick={() => {
-                                  const newAnnos = [...evaluationForm.annotatedImageUrls];
-                                  delete newAnnos[i];
-                                  setEvaluationForm({...evaluationForm, annotatedImageUrls: newAnnos});
-                                }}
-                                className="absolute -top-2 -right-2 p-1 bg-brand-accent rounded-full text-white shadow-lg"
-                              >
-                                <X size={8} />
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                    <div className="grid grid-cols-2 gap-6 mb-6">
-                      {['shape', 'cuticle', 'durability', 'aesthetics'].map((field) => (
-                        <div key={field}>
-                          <label className="text-[9px] font-bold text-white/40 uppercase mb-2 block">{field}</label>
-                          <div className="flex gap-2">
-                            {[1,2,3,4,5].map(s => (
-                              <button 
-                                key={s}
-                                onClick={() => setEvaluationForm({...evaluationForm, [field]: s})}
+                                onClick={() => setShowAnnotator({ show: true, imageUrl: url, idx: i })}
                                 className={cn(
-                                  "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
-                                  (evaluationForm as any)[field] >= s ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" : "bg-white/5 text-white/20"
+                                  "w-16 h-16 rounded-xl overflow-hidden border-2 transition-all",
+                                  annotated ? "border-brand-accent shadow-lg shadow-brand-accent/20" : "border-white/10 hover:border-white/30"
                                 )}
                               >
-                                <Star size={12} fill={ (evaluationForm as any)[field] >= s ? "currentColor" : "none" } />
+                                <img src={annotated || url} alt="" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Pencil size={12} className="text-white" />
+                                </div>
                               </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                              {annotated && (
+                                <button 
+                                  onClick={() => {
+                                    const newAnnos = [...evaluationForm.annotatedImageUrls];
+                                    delete newAnnos[i];
+                                    setEvaluationForm({...evaluationForm, annotatedImageUrls: newAnnos});
+                                  }}
+                                  className="absolute -top-2 -right-2 p-1 bg-brand-accent rounded-full text-white shadow-lg"
+                                >
+                                  <X size={8} />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <textarea 
-                      value={evaluationForm.feedback}
-                      onChange={e => setEvaluationForm({...evaluationForm, feedback: e.target.value})}
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
-                      placeholder={t.portfolio.feedback}
-                    />
-                    <button 
-                      onClick={() => handleAddEvaluation(selectedWork.id)}
-                      disabled={uploading}
-                      className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
-                    >
-                      {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
-                      {t.portfolio.send_eval}
-                    </button>
-                </div>
+
+                      <div className="grid grid-cols-2 gap-6 mb-6">
+                        {['shape', 'cuticle', 'durability', 'aesthetics'].map((field) => (
+                          <div key={field}>
+                            <label className="text-[9px] font-bold text-white/40 uppercase mb-2 block">{field}</label>
+                            <div className="flex gap-2">
+                              {[1,2,3,4,5].map(s => (
+                                <button 
+                                  key={s}
+                                  onClick={() => setEvaluationForm({...evaluationForm, [field]: s})}
+                                  className={cn(
+                                    "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                                    (evaluationForm as any)[field] >= s ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20" : "bg-white/5 text-white/20"
+                                  )}
+                                >
+                                  <Star size={12} fill={ (evaluationForm as any)[field] >= s ? "currentColor" : "none" } />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <textarea 
+                        value={evaluationForm.feedback}
+                        onChange={e => setEvaluationForm({...evaluationForm, feedback: e.target.value})}
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
+                        placeholder={t.portfolio.feedback}
+                      />
+                      <button 
+                        onClick={() => handleAddEvaluation(selectedWork.id)}
+                        disabled={uploading}
+                        className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
+                      >
+                        {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
+                        {t.portfolio.send_eval}
+                      </button>
+                  </div>
+                )}
+              </div>
               </div>
             </motion.div>
           </div>
