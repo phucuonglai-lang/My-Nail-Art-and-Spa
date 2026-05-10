@@ -172,6 +172,25 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
+  const handleCourseFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 800 * 1024) {
+      alert("Hình ảnh quá lớn. Vui lòng chọn ảnh dưới 800KB.");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNewCourse({ ...newCourse, thumbnail: base64 });
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -292,7 +311,10 @@ export default function AdminDashboard() {
       setNewStep({ title: '', desc: '', videoUrl: '', order: steps.length + 1 });
       fetchSteps(selectedProcedureId);
     } catch (error) {
-      alert("Error saving step");
+      console.error("Save Step Error:", error);
+      alert("Lỗi khi lưu bước thực hiện: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -527,7 +549,16 @@ export default function AdminDashboard() {
   };
 
   const handleAddCourse = async () => {
-    if (!newCourse.title || !newCourse.description) return;
+    if (!newCourse.title) {
+      alert("Vui lòng nhập tên khóa học");
+      return;
+    }
+    if (!newCourse.description) {
+      alert("Vui lòng nhập mô tả khóa học");
+      return;
+    }
+    
+    setLoading(true);
     try {
       if (editingCourseId) {
         await updateDoc(doc(db, 'courses', editingCourseId), newCourse);
@@ -539,30 +570,43 @@ export default function AdminDashboard() {
       setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
       fetchData();
     } catch (error) {
-      alert("Lỗi khi lưu khóa học");
+      console.error("Save Course Error:", error);
+      alert("Lỗi khi lưu khóa học: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
     }
   };
 
   const convertToEmbedUrl = (url: string) => {
     if (!url) return '';
-    // If it's already an embed link, return as is
     if (url.includes('youtube.com/embed/')) return url;
     
     let videoId = '';
-    const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(watchRegExp);
+    // Enhanced regex to handle watch, shorts, embed, youtu.be, mobile, and live formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
     
-    if (match && match[2].length === 11) {
+    if (match && match[2] && match[2].length === 11) {
       videoId = match[2];
       return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    // Fallback: if the input is just the 11-char ID
+    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) {
+      return `https://www.youtube.com/embed/${url.trim()}`;
     }
     
     return url;
   };
 
   const handleAddLesson = async () => {
-    if (!selectedCourseId || !newLesson.title) return;
+    if (!selectedCourseId) return;
+    if (!newLesson.title) {
+      alert("Vui lòng nhập tiêu đề bài học");
+      return;
+    }
     
+    setLoading(true);
     const processedLesson = {
       ...newLesson,
       videoUrl: convertToEmbedUrl(newLesson.videoUrl || '')
@@ -585,7 +629,10 @@ export default function AdminDashboard() {
       setNewLesson({ title: '', videoUrl: '', content: '', order: lessons.length + 1 });
       fetchLessons(selectedCourseId);
     } catch (error) {
-      alert("Error saving lesson");
+      console.error("Save Lesson Error:", error);
+      alert("Lỗi khi lưu bài học: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1128,12 +1175,13 @@ export default function AdminDashboard() {
 
                 <div className="mb-10">
                   <span className="text-[10px] font-black uppercase tracking-[5px] text-brand-accent mb-3 block">Administrator Panel</span>
-                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">
+                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
                     {view === 'courses' && (editingCourseId ? t.admin.edit_course : t.admin.add_course)}
                     {view === 'lessons' && (editingLessonId ? t.admin.edit_lesson : t.admin.add_lesson)}
                     {view === 'procedures' && (editingProcedureId ? 'Sửa quy trình' : t.admin.add_procedure)}
                     {view === 'steps' && (editingStepId ? t.admin.edit_step : t.admin.add_step)}
                     {view === 'policies' && (editingPolicyId ? 'Sửa tài liệu' : 'Thêm tài liệu')}
+                    <span className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-white/40 ml-2">V2.1</span>
                   </h2>
                 </div>
 
@@ -1186,15 +1234,62 @@ export default function AdminDashboard() {
                           </select>
                         </div>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">{t.admin.thumbnail}</label>
-                        <input 
-                          type="text" 
-                          value={newCourse.thumbnail} 
-                          onChange={e => setNewCourse({...newCourse, thumbnail: e.target.value})}
-                          placeholder="HTTPS Image URL"
-                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all placeholder:text-white/10"
-                        />
+                        <div className="flex flex-col gap-4">
+                          {newCourse.thumbnail ? (
+                            <div className="relative aspect-video rounded-[32px] overflow-hidden border border-white/10 group">
+                              <img src={newCourse.thumbnail} className="w-full h-full object-cover" alt="Preview" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
+                                <button 
+                                  onClick={() => setNewCourse({...newCourse, thumbnail: ''})}
+                                  className="p-4 bg-rose-500 text-white rounded-2xl hover:scale-110 transition-all shadow-xl"
+                                >
+                                  <Trash2 size={24} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleCourseFileChange}
+                                className="hidden"
+                                id="course-thumb-upload"
+                              />
+                              <label 
+                                htmlFor="course-thumb-upload"
+                                className={cn(
+                                  "w-full flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed rounded-[32px] cursor-pointer transition-all active:scale-[0.98]",
+                                  uploading ? "border-brand-accent bg-brand-accent/5 opacity-50" : "border-white/10 bg-white/5 text-white/10 hover:border-brand-accent/30 hover:text-brand-accent"
+                                )}
+                              >
+                                {uploading ? (
+                                  <RefreshCw className="animate-spin" size={32} />
+                                ) : (
+                                  <>
+                                    <ImageIcon size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Chọn ảnh bìa từ máy</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          )}
+                          
+                          <div className="relative flex items-center justify-center py-2">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <span className="relative px-6 bg-brand-card text-[9px] font-black uppercase tracking-[4px] text-white/20">Hoặc dán URL ảnh</span>
+                          </div>
+
+                          <input 
+                            type="text" 
+                            value={newCourse.thumbnail} 
+                            onChange={e => setNewCourse({...newCourse, thumbnail: e.target.value})}
+                            placeholder="HTTPS Image URL"
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all placeholder:text-white/10"
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-4 pt-4 mt-6 border-t border-white/5">
                         <button 
@@ -1205,8 +1300,10 @@ export default function AdminDashboard() {
                         </button>
                         <button 
                           onClick={handleAddCourse}
-                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all"
+                          disabled={loading}
+                          className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
+                          {loading && <RefreshCw size={16} className="animate-spin" />}
                           {t.admin.save_course}
                         </button>
                       </div>
@@ -1464,13 +1561,13 @@ export default function AdminDashboard() {
                            {t.admin.cancel}
                          </button>
                          <button 
-                            onClick={handleAddPolicy}
-                            disabled={loading}
-                            className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
-                          >
-                            {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
-                            {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
-                          </button>
+                           onClick={handleAddPolicy}
+                           disabled={loading}
+                           className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                         >
+                           {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
+                           {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
+                         </button>
                       </div>
                     </>
                   )}
