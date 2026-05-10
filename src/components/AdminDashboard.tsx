@@ -431,18 +431,32 @@ export default function AdminDashboard() {
   };
 
   const handleAddPolicy = async () => {
-    if (!newPolicy.title) return;
+    if (!newPolicy.title) {
+      alert("Vui lòng nhập tên tài liệu");
+      return;
+    }
+    setLoading(true);
     try {
-      const policyData = {
-        ...newPolicy,
+      // Clean up the data before saving
+      const cleanData: any = {
+        title: newPolicy.title,
+        type: newPolicy.type || 'pdf',
         updatedAt: serverTimestamp()
       };
 
+      if (newPolicy.type === 'html') {
+        cleanData.content = newPolicy.content || '';
+        cleanData.url = ''; // Reset url for HTML type
+      } else {
+        cleanData.url = newPolicy.url || '';
+        cleanData.content = ''; // Reset content for non-HTML
+      }
+
       if (editingPolicyId) {
-        await updateDoc(doc(db, 'policies', editingPolicyId), policyData);
+        await updateDoc(doc(db, 'policies', editingPolicyId), cleanData);
       } else {
         await addDoc(collection(db, 'policies'), {
-          ...policyData,
+          ...cleanData,
           createdAt: serverTimestamp()
         });
       }
@@ -453,7 +467,15 @@ export default function AdminDashboard() {
       fetchData();
     } catch (error) {
       console.error("Save Policy Error:", error);
-      alert("Error saving policy");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert("Lỗi khi lưu tài liệu: " + errorMessage);
+      
+      // Specifically handle permission denied errors which are common
+      if (errorMessage.toLowerCase().includes('permission-denied') || errorMessage.toLowerCase().includes('permissions')) {
+        alert("Lỗi: Bạn không có quyền thực hiện thao tác này. Vui lòng kiểm tra email đã được xác thực chưa hoặc liên hệ quản trị viên.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1460,12 +1482,12 @@ export default function AdminDashboard() {
 
                       {newPolicy.type === 'html' ? (
                         <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Nội dung Chính sách</label>
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Nội dung Chính sách (HTML)</label>
                           <textarea 
                             value={newPolicy.content} 
                             onChange={e => setNewPolicy({...newPolicy, content: e.target.value})}
-                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white text-base leading-relaxed transition-all min-h-[200px] font-sans resize-none"
-                            placeholder="Nhập nội dung quy định chi tiết..."
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white text-sm leading-relaxed transition-all min-h-[300px] font-mono resize-none"
+                            placeholder="Nhập nội dung quy định chi tiết hoặc mã HTML..."
                           />
                         </div>
                       ) : (
@@ -1531,9 +1553,11 @@ export default function AdminDashboard() {
                          </button>
                          <button 
                            onClick={handleAddPolicy}
-                           className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
+                           disabled={loading}
+                           className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
                          >
-                           <Save size={20} /> {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
+                           {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
+                           {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
                          </button>
                       </div>
                     </>
