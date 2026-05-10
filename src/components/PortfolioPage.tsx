@@ -269,25 +269,22 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     fetchTechnicians();
-  }, [profile]);
-
-  useEffect(() => {
     fetchWorks();
   }, [selectedTech, selectedMonth, selectedYear]);
 
   const fetchTechnicians = async () => {
     try {
-      // Try to fetch technicians (students)
-      const q = query(collection(db, 'users'), where('role', '==', 'student'));
+      // Fetch all users to list as technicians
+      const q = query(collection(db, 'users'));
       const snap = await getDocs(q);
       const list = snap.docs.map(doc => ({ 
         uid: doc.id, 
-        name: doc.data().displayName || doc.data().name || 'Không tên' 
-      })).filter(t => t.name);
-      
+        name: doc.data().displayName || doc.data().name || 'Không tên',
+        ...doc.data()
+      }));
       setTechnicians(list);
     } catch (e) {
-      console.error("Fetch Technicians Error (likely guest restriction):", e);
+      console.error("Fetch Technicians Error:", e);
     }
   };
 
@@ -303,9 +300,10 @@ export default function PortfolioPage() {
       const snap = await getDocs(q);
       let allWorks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioWork));
       
-      // Filter by month/year on client side for simplicity or use complex query
+      // Filter by month/year on client side
       const filtered = allWorks.filter(w => {
-        const date = w.createdAt?.toDate ? w.createdAt.toDate() : new Date(w.createdAt);
+        if (!w.createdAt) return false;
+        const date = w.createdAt.toDate ? w.createdAt.toDate() : new Date(w.createdAt);
         return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
       });
 
