@@ -217,39 +217,6 @@ export default function AdminDashboard() {
     })
   );
 
-  useEffect(() => {
-    fetchData();
-  }, [language]);
-
-  if (!isAuth) {
-    return (
-      <div className="flex items-center justify-center p-6 text-center bg-transparent min-h-[400px]">
-        <div className="bg-brand-card p-10 rounded-[32px] border border-white/10 max-w-md w-full shadow-2xl">
-          <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-4">QUẢN TRỊ HỆ THỐNG</h2>
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8">Nhập mật mã để tiếp tục</p>
-          
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <input 
-              type="password"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder="Mật mã..."
-              className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-center text-xl tracking-[0.5em] focus:border-brand-accent outline-none"
-              autoFocus
-            />
-            {passError && <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest">{passError}</p>}
-            <button 
-              type="submit"
-              className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all"
-            >
-              Đăng Nhập
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -285,6 +252,39 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [language]);
+
+  if (!isAuth) {
+    return (
+      <div className="flex items-center justify-center p-6 text-center bg-transparent min-h-[400px] w-full">
+        <div className="bg-brand-card p-10 rounded-[32px] border border-white/10 max-w-md w-full shadow-2xl">
+          <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-4">QUẢN TRỊ HỆ THỐNG</h2>
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8">Nhập mật mã để tiếp tục</p>
+          
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <input 
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Mật mã..."
+              className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-center text-xl tracking-[0.5em] focus:border-brand-accent outline-none"
+              autoFocus
+            />
+            {passError && <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest">{passError}</p>}
+            <button 
+              type="submit"
+              className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all"
+            >
+              Đăng Nhập
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const fetchLessons = async (courseId: string) => {
     if (!courseId) return;
