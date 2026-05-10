@@ -28,7 +28,9 @@ import {
   Eraser,
   Download,
   Trash2,
-  X
+  X,
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
