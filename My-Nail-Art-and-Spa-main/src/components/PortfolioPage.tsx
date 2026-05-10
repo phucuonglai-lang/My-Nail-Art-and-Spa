@@ -216,7 +216,9 @@ export default function PortfolioPage() {
   const [view, setView] = useState<'timeline' | 'analytics'>('timeline');
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
+  const [technicians, setTechnicians] = useState<any[]>([]);
+  const [selectedTech, setSelectedTech] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState<{show: boolean, action: () => void}>({ show: false, action: () => {} });
