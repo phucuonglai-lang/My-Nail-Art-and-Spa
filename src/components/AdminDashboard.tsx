@@ -223,15 +223,10 @@ export default function AdminDashboard() {
 
   if (!isAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 pt-24 text-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-brand-card p-12 rounded-[40px] border border-brand-border max-w-md w-full shadow-2xl"
-        >
-          <Lock className="w-16 h-16 text-brand-accent mx-auto mb-6" />
-          <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Quản Trị Hệ Thống</h2>
-          <p className="text-white/40 text-sm font-medium leading-relaxed mb-8">Vui lòng nhập mật mã quản trị để tiếp tục.</p>
+      <div className="flex items-center justify-center p-6 text-center bg-transparent min-h-[400px]">
+        <div className="bg-brand-card p-10 rounded-[32px] border border-white/10 max-w-md w-full shadow-2xl">
+          <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-4">QUẢN TRỊ HỆ THỐNG</h2>
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8">Nhập mật mã để tiếp tục</p>
           
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <input 
@@ -242,15 +237,15 @@ export default function AdminDashboard() {
               className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-center text-xl tracking-[0.5em] focus:border-brand-accent outline-none"
               autoFocus
             />
-            {passError && <p className="text-rose-500 text-xs font-bold uppercase tracking-widest">{passError}</p>}
+            {passError && <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest">{passError}</p>}
             <button 
               type="submit"
-              className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+              className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all"
             >
               Đăng Nhập
             </button>
           </form>
-        </motion.div>
+        </div>
       </div>
     );
   }
