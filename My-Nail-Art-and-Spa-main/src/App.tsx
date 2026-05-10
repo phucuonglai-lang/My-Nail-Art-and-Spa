@@ -419,9 +419,9 @@ export default function App() {
           <div className="min-h-screen bg-transparent text-brand-text selection:bg-brand-accent/30 font-sans">
             <Routes>
               <Route path="/admin" element={
-                <AdminRoute>
+                <SharedLayout>
                    <AdminDashboard />
-                </AdminRoute>
+                </SharedLayout>
               } />
               <Route path="/" element={
                 <SharedLayout>
