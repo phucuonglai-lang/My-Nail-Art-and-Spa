@@ -1132,17 +1132,16 @@ export default function PortfolioPage() {
                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
                         placeholder={t.portfolio.feedback}
                       />
-                      <button 
-                        onClick={() => handleAddEvaluation(selectedWork.id)}
-                        disabled={uploading}
-                        className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
-                      >
-                        {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
-                        {t.portfolio.send_eval}
-                      </button>
+                    <button 
+                      onClick={() => handleAddEvaluation(selectedWork.id)}
+                      disabled={uploading}
+                      className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
+                    >
+                      {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
+                      {t.portfolio.send_eval}
+                    </button>
                   </div>
                 )}
-              </div>
               </div>
             </motion.div>
           </div>

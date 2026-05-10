@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'instructor' | 'admin';
+export type UserRole = 'student' | 'instructor' | 'admin' | 'staff';
 
 export interface UserProfile {
   uid: string;
@@ -109,3 +109,32 @@ export interface SupplyItem {
   lastUpdated?: any;
 }
 
+export interface WorkEvaluation {
+  id: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  ratings: {
+    shape: number;
+    cuticle: number;
+    durability: number;
+    aesthetics: number;
+  };
+  feedback: string;
+  annotatedImageUrls?: string[];
+  createdAt: string;
+}
+
+export interface PortfolioWork {
+  id: string;
+  imageUrl: string;
+  imageUrls?: string[];
+  technicianId: string;
+  technicianName: string;
+  category: string;
+  tags: string[];
+  duration: string;
+  notes: string;
+  level: number;
+  evaluations: WorkEvaluation[];
+  createdAt: any;
+}
