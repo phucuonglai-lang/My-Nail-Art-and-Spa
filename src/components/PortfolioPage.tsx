@@ -413,8 +413,16 @@ export default function PortfolioPage() {
       fetchWorks();
     } catch (error: any) {
       console.error("Save Work Error:", error);
-      alert("Lỗi lưu tác phẩm: " + (error.message?.includes('too large') ? "Dung lượng ảnh quá lớn, hãy chọn ít ảnh hơn hoặc ảnh nhỏ hơn." : error.message || "Lỗi không xác định"));
+      const errorMessage = error.message || String(error);
+      if (errorMessage.toLowerCase().includes('too large')) {
+        alert("Lỗi: Dung lượng bài đăng quá lớn. Anh hãy thử tải lên ít ảnh hơn hoặc ảnh nhỏ hơn nhé.");
+      } else if (errorMessage.toLowerCase().includes('permission-denied')) {
+        alert("Lỗi: Anh không có quyền đăng bài. Vui lòng kiểm tra lại luật bảo mật hoặc xác thực email.");
+      } else {
+        alert("Lỗi khi lưu bài đăng: " + errorMessage);
+      }
     } finally {
+      setLoading(false);
       setUploading(false);
     }
   };

@@ -311,7 +311,10 @@ export default function AdminDashboard() {
       setNewStep({ title: '', desc: '', videoUrl: '', order: steps.length + 1 });
       fetchSteps(selectedProcedureId);
     } catch (error) {
-      alert("Error saving step");
+      console.error("Save Step Error:", error);
+      alert("Lỗi khi lưu bước thực hiện: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -576,16 +579,21 @@ export default function AdminDashboard() {
 
   const convertToEmbedUrl = (url: string) => {
     if (!url) return '';
-    // If it's already an embed link, return as is
     if (url.includes('youtube.com/embed/')) return url;
     
     let videoId = '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    // Enhanced regex to handle watch, shorts, embed, youtu.be, mobile, and live formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
     const match = url.match(regExp);
     
-    if (match && match[2].length === 11) {
+    if (match && match[2] && match[2].length === 11) {
       videoId = match[2];
       return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    // Fallback: if the input is just the 11-char ID
+    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) {
+      return `https://www.youtube.com/embed/${url.trim()}`;
     }
     
     return url;
@@ -622,7 +630,7 @@ export default function AdminDashboard() {
       fetchLessons(selectedCourseId);
     } catch (error) {
       console.error("Save Lesson Error:", error);
-      alert("Lỗi khi lưu bài học");
+      alert("Lỗi khi lưu bài học: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }

@@ -7,9 +7,9 @@ service cloud.firestore {
     
     // Admin check - includes primary owner and anything marked as admin in users collection
     function isAdmin() { 
-      return isVerified() && (
+      return isSignedIn() && (
         request.auth.token.email == "phucuonglai@gmail.com" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        (isVerified() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
@@ -19,17 +19,17 @@ service cloud.firestore {
     // User profiles
     match /users/{userId} {
       allow get: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() || isAdmin();
     }
 
     // Courses
     match /courses/{courseId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
       
       match /lessons/{lessonId} {
-        allow read: if isSignedIn();
+        allow read: if true;
         allow write: if isAdmin();
       }
     }
@@ -47,6 +47,12 @@ service cloud.firestore {
 
     // Policies
     match /policies/{policyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Portfolios
+    match /portfolios/{workId} {
       allow read: if true;
       allow write: if isAdmin();
     }
