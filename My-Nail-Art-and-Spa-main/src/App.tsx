@@ -26,15 +26,15 @@ import HomePage from './components/HomePage';
 import LibraryPage from './components/LibraryPage';
 import ProceduresPage from './components/ProceduresPage';
 import Sidebar from './components/Sidebar';
-import AIChatbot from './components/AIChatbot';
 import ReportsPage from './components/ReportsPage';
 import SupplyPage from './components/SupplyPage';
+import PortfolioPage from './components/PortfolioPage';
 
 // --- Layouts ---
 
 function SharedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
       <Sidebar />
       <main className="lg:pl-80 pt-16 transition-all duration-300">
@@ -73,7 +73,7 @@ function Navbar() {
   const { loading: authLoading } = useAuth();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-border z-50 flex items-center justify-between px-6">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-black/30 backdrop-blur-xl border-b border-white/5 z-50 flex items-center justify-between px-6">
       {/* Left: Logo */}
       <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-accent/40">
@@ -82,28 +82,15 @@ function Navbar() {
         <span className="font-serif font-bold text-lg text-brand-text tracking-[2px] uppercase hidden sm:inline">NailPro Academy</span>
       </Link>
 
-      {/* Center: Navigation Links */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
-        <Link 
-          to="/library" 
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-text/60 px-3 py-2 hover:text-brand-blue transition-all"
-        >
-          <BookOpen size={14} className="text-brand-blue" />
-          <span className="hidden sm:inline">{t.nav.library}</span>
-        </Link>
-      </div>
-      
       {/* Right: Actions */}
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-        {profile?.role === 'admin' && (
-          <Link 
-            to="/admin" 
-            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-purple px-3 py-1 border border-brand-purple/20 rounded-lg hover:bg-brand-purple hover:text-white transition-all shadow-lg shadow-brand-purple/10"
-          >
-            <Layout size={14} className="md:hidden" />
-            <span className="hidden md:inline">{t.nav.admin}</span>
-          </Link>
-        )}
+        <Link 
+          to="/admin" 
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-purple px-3 py-1 border border-brand-purple/20 rounded-lg hover:bg-brand-purple hover:text-white transition-all shadow-lg shadow-brand-purple/10"
+        >
+          <Layout size={14} className="md:hidden" />
+          <span className="hidden md:inline">{t.nav.admin}</span>
+        </Link>
         
         {user ? (
           <div className="flex items-center gap-3">
@@ -158,13 +145,6 @@ function Navbar() {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-      <div className="w-12 h-12 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin" />
-    </div>
-  );
-  if (!user || profile?.role !== 'admin') return <Navigate to="/" />;
   return <>{children}</>;
 }
 
@@ -335,9 +315,9 @@ function LessonPage() {
 
   const getVideoId = (url: string) => {
     if (!url) return '';
-    const watchRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(watchRegExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url; // Trả về chính nó nếu là ID sẵn
   };
 
   if (loading) return (
@@ -436,7 +416,7 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <HashRouter>
-          <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 font-sans">
+          <div className="min-h-screen bg-transparent text-brand-text selection:bg-brand-accent/30 font-sans">
             <Routes>
               <Route path="/admin" element={
                 <AdminRoute>
@@ -456,6 +436,11 @@ export default function App() {
               <Route path="/reports" element={
                 <SharedLayout>
                   <ReportsPage />
+                </SharedLayout>
+              } />
+              <Route path="/portfolio" element={
+                <SharedLayout>
+                  <PortfolioPage />
                 </SharedLayout>
               } />
               <Route path="/supply" element={
@@ -507,7 +492,6 @@ export default function App() {
                 </SharedLayout>
               } />
             </Routes>
-            <AIChatbot />
           </div>
         </HashRouter>
       </AuthProvider>

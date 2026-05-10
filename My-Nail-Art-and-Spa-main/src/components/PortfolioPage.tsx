@@ -215,11 +215,35 @@ export default function PortfolioPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   
-  // Hierarchical States
-  const [technicians, setTechnicians] = useState<{uid: string, name: string}[]>([]);
-  const [selectedTech, setSelectedTech] = useState<string>('all');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState<{show: boolean, action: () => void}>({ show: false, action: () => {} });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const MASTER_PASSWORD = '19742';
+
+  const checkPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === MASTER_PASSWORD) {
+      setIsAdminAuthenticated(true);
+      setShowPasswordPrompt({ show: false, action: () => {} });
+      showPasswordPrompt.action();
+      setPasswordInput('');
+      setPasswordError('');
+    } else {
+      setPasswordError('Mật mã không đúng!');
+      setTimeout(() => setPasswordError(''), 2000);
+    }
+  };
+
+  const runWithAuth = (action: () => void) => {
+    if (isAdminAuthenticated) {
+      action();
+    } else {
+      setShowPasswordPrompt({ show: true, action });
+    }
+  };
 
   // Form states
   const [newWork, setNewWork] = useState<Partial<PortfolioWork>>({
@@ -437,7 +461,7 @@ export default function PortfolioPage() {
   }, [selectedWork]);
   const [showAnnotator, setShowAnnotator] = useState<{show: boolean, imageUrl: string, idx?: number}>({ show: false, imageUrl: '' });
   const handleDeleteWork = async (workId: string) => {
-    if (!window.confirm(t.portfolio.delete_confirm)) return;
+    if (!window.confirm("Xác nhận xóa bài đăng này?")) return;
     
     setUploading(true);
     try {
@@ -542,15 +566,13 @@ export default function PortfolioPage() {
               <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                 <Users className="text-brand-accent" /> Nhân Viên
               </h2>
-              {isAdmin && (
-                <button 
-                  onClick={handleAddTechnician}
-                  className="w-8 h-8 bg-brand-accent/20 text-brand-accent rounded-full flex items-center justify-center hover:bg-brand-accent hover:text-white transition-all"
-                  title="Thêm nhân viên mới"
-                >
-                  <Plus size={16} />
-                </button>
-              )}
+              <button 
+                onClick={() => runWithAuth(handleAddTechnician)}
+                className="w-8 h-8 bg-brand-accent/20 text-brand-accent rounded-full flex items-center justify-center hover:bg-brand-accent hover:text-white transition-all"
+                title="Thêm nhân viên mới"
+              >
+                <Plus size={16} />
+              </button>
             </div>
             <div className="space-y-2">
               <button 
@@ -612,7 +634,7 @@ export default function PortfolioPage() {
                 <ImageIcon size={20} className="text-brand-accent" /> {t.portfolio.works} {months[selectedMonth]}
               </h2>
               <button 
-                onClick={() => setIsAdding(true)}
+                onClick={() => runWithAuth(() => setIsAdding(true))}
                 className="flex items-center gap-2 bg-brand-accent text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 hover:scale-105 active:scale-95 transition-all"
               >
                 <Plus size={16} /> {t.portfolio.add_work}
@@ -688,19 +710,16 @@ export default function PortfolioPage() {
                       </button>
                     </div>
 
-                    {/* Quick Delete for Admin */}
-                    {isAdmin && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteWork(work.id);
-                        }}
-                        className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
-                        title={t.portfolio.quick_delete}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        runWithAuth(() => handleDeleteWork(work.id));
+                      }}
+                      className="absolute bottom-20 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
+                      title={t.portfolio.quick_delete}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </motion.div>
               ))}
@@ -1007,16 +1026,14 @@ export default function PortfolioPage() {
                   </div>
                 </div>
 
-                {isAdmin && (
                   <div className="mt-8 pt-8 border-t border-white/5">
                     <button 
-                      onClick={() => handleDeleteWork(selectedWork.id)}
+                      onClick={() => runWithAuth(() => handleDeleteWork(selectedWork.id))}
                       className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-red-500 transition-colors"
                     >
                       <Trash2 size={14} /> {t.portfolio.delete}
                     </button>
                   </div>
-                )}
               </div>
 
               {/* Right: Evaluations */}
@@ -1065,8 +1082,7 @@ export default function PortfolioPage() {
                 </div>
 
                 {/* Admin Grading Form */}
-                {isAdmin && (
-                  <div className="mt-8 pt-8 border-t border-white/10">
+                <div className="mt-8 pt-8 border-t border-white/10">
                     <div className="mb-6">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-accent mb-4">{t.portfolio.grading}</h4>
                       <p className="text-[9px] text-white/40 uppercase mb-4">{t.portfolio.draw_tip}:</p>
@@ -1132,17 +1148,68 @@ export default function PortfolioPage() {
                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs text-white mb-4 outline-none focus:border-brand-accent transition-colors"
                         placeholder={t.portfolio.feedback}
                       />
-                    <button 
-                      onClick={() => handleAddEvaluation(selectedWork.id)}
-                      disabled={uploading}
-                      className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
-                    >
-                      {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
-                      {t.portfolio.send_eval}
+                      <button 
+                        onClick={() => runWithAuth(() => handleAddEvaluation(selectedWork.id))}
+                        disabled={uploading}
+                        className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-accent/20 flex items-center justify-center gap-2"
+                      >
+                        {uploading ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
                     </button>
                   </div>
-                )}
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Password Prompt Modal */}
+      <AnimatePresence>
+        {showPasswordPrompt.show && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowPasswordPrompt({ show: false, action: () => {} })}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-brand-card border border-white/10 p-10 rounded-[40px] w-full max-w-md relative z-10 shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-brand-accent/10 rounded-3xl flex items-center justify-center text-4xl mb-8 mx-auto">
+                <Lock className="text-brand-accent" size={32} />
+              </div>
+              <h2 className="text-2xl font-black text-white text-center uppercase tracking-tight mb-2">Xác Thực Quyền</h2>
+              <p className="text-white/30 text-center text-sm font-medium uppercase tracking-widest mb-8">Vui lòng nhập mật mã để tiếp tục</p>
+
+              <form onSubmit={checkPassword} className="space-y-4">
+                <div className="relative">
+                  <input 
+                    type="password" 
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Mật mã..."
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-5 text-white placeholder-white/10 focus:border-brand-accent focus:outline-none transition-all text-xl tracking-[1em] text-center"
+                    autoFocus
+                  />
+                </div>
+                
+                {passwordError && <p className="text-rose-500 text-center text-sm font-bold uppercase tracking-widest">{passwordError}</p>}
+
+                <button 
+                  type="submit"
+                  className="w-full bg-brand-accent text-white font-black py-5 rounded-2xl uppercase tracking-[3px] shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-3"
+                >
+                  Xác Nhận <ArrowRight size={18} />
+                </button>
+                
+                <button 
+                  type="button"
+                  onClick={() => setShowPasswordPrompt({ show: false, action: () => {} })}
+                  className="w-full text-white/20 hover:text-white transition-colors py-2 text-[10px] font-black uppercase tracking-widest"
+                >
+                  Hủy bỏ
+                </button>
+              </form>
             </motion.div>
           </div>
         )}

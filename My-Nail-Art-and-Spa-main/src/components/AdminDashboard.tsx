@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch, setDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Course, Lesson, Procedure, ProcedureStep, Policy } from '../types';
-import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { cn } from '../lib/utils';
 import { serverTimestamp } from 'firebase/firestore';
@@ -128,6 +128,21 @@ export default function AdminDashboard() {
   const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [isAuth, setIsAuth] = useState(false);
+  const [passError, setPassError] = useState('');
+  const MASTER_PASSWORD = '19742';
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === MASTER_PASSWORD) {
+      setIsAuth(true);
+      setPassError('');
+    } else {
+      setPassError('Mật mã không đúng!');
+      setTimeout(() => setPassError(''), 2000);
+    }
+  };
 
   // Form states
   const [isAdding, setIsAdding] = useState(false);
@@ -204,7 +219,41 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [language]);
+
+  if (!isAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 pt-24 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-brand-card p-12 rounded-[40px] border border-brand-border max-w-md w-full shadow-2xl"
+        >
+          <Lock className="w-16 h-16 text-brand-accent mx-auto mb-6" />
+          <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Quản Trị Hệ Thống</h2>
+          <p className="text-white/40 text-sm font-medium leading-relaxed mb-8">Vui lòng nhập mật mã quản trị để tiếp tục.</p>
+          
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <input 
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Mật mã..."
+              className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white text-center text-xl tracking-[0.5em] focus:border-brand-accent outline-none"
+              autoFocus
+            />
+            {passError && <p className="text-rose-500 text-xs font-bold uppercase tracking-widest">{passError}</p>}
+            <button 
+              type="submit"
+              className="w-full bg-brand-accent text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+            >
+              Đăng Nhập
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   const fetchData = async () => {
     setLoading(true);

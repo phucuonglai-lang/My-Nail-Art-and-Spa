@@ -84,15 +84,13 @@ function Navbar() {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-        {profile?.role === 'admin' && (
-          <Link 
-            to="/admin" 
-            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-purple px-3 py-1 border border-brand-purple/20 rounded-lg hover:bg-brand-purple hover:text-white transition-all shadow-lg shadow-brand-purple/10"
-          >
-            <Layout size={14} className="md:hidden" />
-            <span className="hidden md:inline">{t.nav.admin}</span>
-          </Link>
-        )}
+        <Link 
+          to="/admin" 
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-purple px-3 py-1 border border-brand-purple/20 rounded-lg hover:bg-brand-purple hover:text-white transition-all shadow-lg shadow-brand-purple/10"
+        >
+          <Layout size={14} className="md:hidden" />
+          <span className="hidden md:inline">{t.nav.admin}</span>
+        </Link>
         
         {user ? (
           <div className="flex items-center gap-3">
@@ -147,13 +145,6 @@ function Navbar() {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-      <div className="w-12 h-12 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin" />
-    </div>
-  );
-  if (!user || profile?.role !== 'admin') return <Navigate to="/" />;
   return <>{children}</>;
 }
 
