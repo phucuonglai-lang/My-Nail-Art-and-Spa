@@ -1167,12 +1167,13 @@ export default function AdminDashboard() {
 
                 <div className="mb-10">
                   <span className="text-[10px] font-black uppercase tracking-[5px] text-brand-accent mb-3 block">Administrator Panel</span>
-                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">
+                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
                     {view === 'courses' && (editingCourseId ? t.admin.edit_course : t.admin.add_course)}
                     {view === 'lessons' && (editingLessonId ? t.admin.edit_lesson : t.admin.add_lesson)}
                     {view === 'procedures' && (editingProcedureId ? 'Sửa quy trình' : t.admin.add_procedure)}
                     {view === 'steps' && (editingStepId ? t.admin.edit_step : t.admin.add_step)}
                     {view === 'policies' && (editingPolicyId ? 'Sửa tài liệu' : 'Thêm tài liệu')}
+                    <span className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-white/40 ml-2">V2.1</span>
                   </h2>
                 </div>
 

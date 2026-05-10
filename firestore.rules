@@ -7,9 +7,9 @@ service cloud.firestore {
     
     // Admin check - includes primary owner and anything marked as admin in users collection
     function isAdmin() { 
-      return isVerified() && (
+      return isSignedIn() && (
         request.auth.token.email == "phucuonglai@gmail.com" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        (isVerified() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
