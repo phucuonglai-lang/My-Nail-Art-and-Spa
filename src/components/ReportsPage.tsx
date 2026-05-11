@@ -34,17 +34,20 @@ const BRANCH_SHEETS = [
 ];
 
 function SimpleAreaChart({ data, labels, color }: { data: number[], labels: string[], color: string }) {
-  const height = 300;
-  const width = 800;
-  const padding = 40;
+  const height = 350;
+  const width = 850;
+  const paddingLeft = 80;
+  const paddingBottom = 60;
+  const paddingTop = 40;
+  const paddingRight = 40;
   
-  const max = Math.max(...data) * 1.1;
-  const min = Math.min(...data) * 0.9;
+  const max = Math.max(...data) * 1.2;
+  const min = 0; // Start from 0 for clear scale
   
   const points = useMemo(() => {
     return data.map((val, i) => ({
-      x: (i / (data.length - 1)) * (width - padding * 2) + padding,
-      y: height - ((val - min) / (max - min)) * (height - padding * 2) - padding
+      x: (i / (data.length - 1)) * (width - paddingLeft - paddingRight) + paddingLeft,
+      y: height - ((val - min) / (max - min)) * (height - paddingTop - paddingBottom) - paddingBottom
     }));
   }, [data, min, max]);
 
@@ -55,7 +58,7 @@ function SimpleAreaChart({ data, labels, color }: { data: number[], labels: stri
   }, [points]);
 
   const areaData = useMemo(() => {
-    return `${pathData} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+    return `${pathData} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
   }, [pathData, points]);
 
   return (
@@ -68,22 +71,23 @@ function SimpleAreaChart({ data, labels, color }: { data: number[], labels: stri
           </linearGradient>
         </defs>
         
-        {/* Grid lines */}
-        {[0, 1, 2, 3].map((i) => {
-          const y = padding + (i / 3) * (height - padding * 2);
+        {/* Y-Axis Labels (Amount) */}
+        {[0, 1, 2, 3, 4].map((i) => {
+          const val = Math.round((max / 4) * i);
+          const y = height - paddingBottom - (i / 4) * (height - paddingTop - paddingBottom);
           return (
-            <line 
-              key={i} 
-              x1={padding} 
-              y1={y} 
-              x2={width - padding} 
-              y2={y} 
-              stroke="white" 
-              strokeOpacity="0.05" 
-              strokeDasharray="4 4"
-            />
+            <g key={i}>
+              <line x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} stroke="white" strokeOpacity="0.05" strokeDasharray="4 4" />
+              <text x={paddingLeft - 10} y={y + 4} textAnchor="end" fill="white" fillOpacity="0.3" fontSize="10" className="font-bold">
+                ${val.toLocaleString()}
+              </text>
+            </g>
           );
         })}
+
+        {/* Axis Titles */}
+        <text x={paddingLeft - 70} y={height / 2} transform={`rotate(-90, ${paddingLeft - 70}, ${height / 2})`} textAnchor="middle" fill={color} fillOpacity="0.5" fontSize="10" className="font-black uppercase tracking-[3px]">Số Tiền ($)</text>
+        <text x={width / 2} y={height - 5} textAnchor="middle" fill={color} fillOpacity="0.5" fontSize="10" className="font-black uppercase tracking-[3px]">Kỳ Báo Cáo</text>
 
         {/* Area fill */}
         <motion.path
@@ -110,22 +114,16 @@ function SimpleAreaChart({ data, labels, color }: { data: number[], labels: stri
         {/* Points */}
         {points.map((point, i) => (
           <motion.g key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 * i }}>
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r="6"
-              fill="#111"
-              stroke={color}
-              strokeWidth="3"
-            />
+            <circle cx={point.x} cy={point.y} r="6" fill="#111" stroke={color} strokeWidth="3" />
             <text
               x={point.x}
-              y={height - 10}
+              y={height - paddingBottom + 25}
               textAnchor="middle"
               fill="white"
-              fillOpacity="0.3"
+              fillOpacity="0.4"
               fontSize="10"
               className="font-bold uppercase tracking-tighter"
+              transform={`rotate(-30, ${point.x}, ${height - paddingBottom + 25})`}
             >
               {labels[i]}
             </text>
@@ -301,22 +299,16 @@ export default function ReportsPage() {
           </div>
 
           {viewMode === 'chart' ? (
-            <div className="flex-1 flex flex-col justify-center bg-brand-bg/50 rounded-3xl p-6 border border-white/5 relative overflow-hidden">
+            <div className="flex-1 flex flex-col justify-center bg-brand-bg/50 rounded-3xl p-6 border border-white/5 relative overflow-hidden mb-8">
               <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,45,85,0.05),transparent)] pointer-events-none" />
               <SimpleAreaChart 
                 data={activeBranch?.chartData || []} 
                 labels={activeBranch?.labels || []}
                 color={activeTab === 'kendall' ? '#10b981' : '#f43f5e'} 
               />
-              <div className="mt-8 flex items-center justify-center gap-8">
-                <div className="flex items-center gap-2">
-                  <div className={cn("w-3 h-3 rounded-full", activeTab === 'kendall' ? 'bg-emerald-500' : 'bg-rose-500')} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Doanh thu theo kỳ</span>
-                </div>
-              </div>
             </div>
           ) : (
-            <div className="flex-1 bg-white rounded-2xl overflow-hidden border border-white/10 relative min-h-[500px]">
+            <div className="flex-1 bg-white rounded-2xl overflow-hidden border border-white/10 relative min-h-[500px] mb-8">
               <iframe 
                 src={activeBranch?.sheetUrl} 
                 className="w-full h-full border-0"
@@ -325,32 +317,87 @@ export default function ReportsPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4 mt-12 border-t border-white/5 pt-8">
-            <h2 className="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-2">
-              <FileText className="text-brand-accent" />
-              Mẫu Báo Cáo & Dữ liệu
-            </h2>
-            <button 
-              onClick={() => {
-                const headers = ['Kỳ', 'CASH', 'Lợi Nhuận', 'Doanh thu', 'Lương Nhân Viên'];
-                const data = [
-                  ['TỔNG', '$8.510,00', '$63.046,00', '$291.467,00', '$212.855,00'],
-                  ['12/8-12/21', '$1.368,00', '$7.583,00', '$25.486,00', '$18.603,00']
-                ];
-                let csvContent = "data:text/csv;charset=utf-8," 
-                  + headers.join(",") + "\n"
-                  + data.map(e => e.join(",")).join("\n");
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `Bao_Cao_${activeBranch?.name}.csv`);
-                document.body.appendChild(link);
-                link.click();
-              }}
-              className="flex items-center gap-2 text-xs font-bold text-emerald-500 hover:text-white uppercase tracking-widest transition-colors bg-white/5 px-4 py-2 rounded-xl"
-            >
-              Xuất CSV <File size={14} />
-            </button>
+          {/* Detailed Data Table - Always visible or at least detailed */}
+          <div className="mt-8 border-t border-white/5 pt-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                <FileText className="text-brand-accent" />
+                Chi Tiết Báo Cáo: {activeBranch?.name}
+              </h2>
+              <button 
+                onClick={() => {
+                  const headers = ['Kỳ', 'CASH', 'Lợi Nhuận', 'Doanh thu', 'Lương Nhân Viên'];
+                  const dataRows = [
+                    ['TỔNG', '$8.510,00', '$63.046,00', '$291.467,00', '$212.855,00'],
+                    ['12/8-12/21', '$1.368,00', '$7.583,00', '$25.486,00', '$18.603,00'],
+                    ['12/22-1/11', '$3.074,00', '$11.057,00', '$31.968,00', '$20.911,00'],
+                    ['1/12-1/25', '$2.120,00', '$5.627,00', '$24.310,00', '$18.682,00'],
+                    ['1/26-02/8', '$525,00', '$5.505,00', '$21.853,00', '$16.348,00'],
+                    ['02/09-02/22', '$659,00', '$4.744,00', '$29.118,00', '$25.074,00'],
+                    ['02/23-03/08', '$145,00', '$836,00', '$29.615,00', '$29.615,00'],
+                    ['03/09-03/22', '$2.953,00', '$11.228,00', '$30.565,00', '$20.037,00'],
+                    ['03/23-04/05', '$2.392,00', '$11.584,00', '$32.018,00', '$21.133,00'],
+                    ['04/06-04/19', '$1.834,00', '$11.592,00', '$30.057,00', '$19.265,00'],
+                    ['04/20-05/03', '$3.440,00', '$13.290,00', '$36.477,00', '$23.187,00']
+                  ];
+                  let csvContent = "data:text/csv;charset=utf-8," 
+                    + headers.join(",") + "\n"
+                    + dataRows.map(e => e.join(",")).join("\n");
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", encodedUri);
+                  link.setAttribute("download", `Bao_Cao_Chi_Tiet_${activeBranch?.name}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                }}
+                className="flex items-center gap-2 text-xs font-bold text-emerald-500 hover:text-white uppercase tracking-widest transition-colors bg-white/5 px-4 py-2 rounded-xl"
+              >
+                Xuất CSV <File size={14} />
+              </button>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-yellow-400">
+                    <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Kỳ</th>
+                    <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">CASH</th>
+                    <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Lợi Nhuận</th>
+                    <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Doanh thu</th>
+                    <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Lương Nhân Viên</th>
+                  </tr>
+                </thead>
+                <tbody className="text-white/80 text-[11px] font-medium">
+                  <tr className="bg-white/5 font-bold text-white">
+                    <td className="p-3 border border-white/10 uppercase">TỔNG</td>
+                    <td className="p-3 border border-white/10 text-emerald-400">$8.510,00</td>
+                    <td className="p-3 border border-white/10 text-emerald-400">$63.046,00</td>
+                    <td className="p-3 border border-white/10">$291.467,00</td>
+                    <td className="p-3 border border-white/10 text-rose-400">$212.855,00</td>
+                  </tr>
+                  {[
+                    ['12/8-12/21', '$1.368,00', '$7.583,00', '$25.486,00', '$18.603,00'],
+                    ['12/22-1/11', '$3.074,00', '$11.057,00', '$31.968,00', '$20.911,00'],
+                    ['1/12-1/25', '$2.120,00', '$5.627,00', '$24.310,00', '$18.682,00'],
+                    ['1/26-02/8', '$525,00', '$5.505,00', '$21.853,00', '$16.348,00'],
+                    ['02/09-02/22', '$659,00', '$4.744,00', '$29.118,00', '$25.074,00'],
+                    ['02/23-03/08', '$145,00', '$836,00', '$29.615,00', '$29.615,00'],
+                    ['03/09-03/22', '$2.953,00', '$11.228,00', '$30.565,00', '$20.037,00'],
+                    ['03/23-04/05', '$2.392,00', '$11.584,00', '$32.018,00', '$21.133,00'],
+                    ['04/06-04/19', '$1.834,00', '$11.592,00', '$30.057,00', '$19.265,00'],
+                    ['04/20-05/03', '$3.440,00', '$13.290,00', '$36.477,00', '$23.187,00']
+                  ].map((row, i) => (
+                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                      <td className="p-3 border border-white/5 font-mono">{row[0]}</td>
+                      <td className="p-3 border border-white/5 text-emerald-500/80">{row[1]}</td>
+                      <td className="p-3 border border-white/5 text-emerald-500/80">{row[2]}</td>
+                      <td className="p-3 border border-white/5">{row[3]}</td>
+                      <td className="p-3 border border-white/5 text-rose-500/80">{row[4]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
