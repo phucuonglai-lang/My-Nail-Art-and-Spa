@@ -111,10 +111,23 @@ function SimpleAreaChart({ data, labels, color }: { data: number[], labels: stri
           strokeLinejoin="round"
         />
 
-        {/* Points */}
+        {/* Points and Labels */}
         {points.map((point, i) => (
           <motion.g key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 * i }}>
+            {/* Value Label */}
+            <text
+              x={point.x}
+              y={point.y - 15}
+              textAnchor="middle"
+              fill="white"
+              fontSize="10"
+              className="font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+            >
+              ${data[i].toLocaleString()}
+            </text>
+            
             <circle cx={point.x} cy={point.y} r="6" fill="#111" stroke={color} strokeWidth="3" />
+            
             <text
               x={point.x}
               y={height - paddingBottom + 25}
