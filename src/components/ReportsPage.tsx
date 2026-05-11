@@ -213,7 +213,7 @@ export default function ReportsPage() {
       <header className="mb-12">
         <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white mb-4 flex items-center gap-4">
           <TrendingUp className="text-brand-accent w-10 h-10" />
-          Báo Cáo Kinh Doanh
+          Báo Cáo Kinh Doanh ✨
         </h1>
         <p className="text-white/30 uppercase tracking-[0.2em] text-xs font-bold">
           Phân tích Doanh thu & Xu hướng tăng trưởng
