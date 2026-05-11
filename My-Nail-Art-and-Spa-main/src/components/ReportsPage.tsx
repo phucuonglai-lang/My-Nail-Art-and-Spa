@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
-import { Lock, ArrowRight, TrendingUp, DollarSign, Users, Store, ExternalLink } from 'lucide-react';
+import { Lock, ArrowRight, TrendingUp, DollarSign, Users, Store, ExternalLink, FileText, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 // You can replace these with your actual Google Sheets embed URLs
 const BRANCH_SHEETS = [
   {
-    id: 'branch-1',
-    name: 'Chi nhánh 1',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_ID_1/pubhtml?widget=true&headers=false',
-    realUrl: 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_1/edit'
+    id: 'kendall',
+    name: 'Kendall',
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/1pZwSqVYBtxwtyatnf-0tjjJJsFGahGivY-qSk3qH_GQ/preview?gid=0',
+    realUrl: 'https://docs.google.com/spreadsheets/d/1pZwSqVYBtxwtyatnf-0tjjJJsFGahGivY-qSk3qH_GQ/edit',
+    stats: {
+      revenue: '$291.467,00',
+      salary: '$212.855,00',
+      profit: '$63.046,00'
+    }
   },
   {
-    id: 'branch-2',
-    name: 'Chi nhánh 2',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_ID_2/pubhtml?widget=true&headers=false',
-    realUrl: 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_2/edit'
-  },
-  {
-    id: 'branch-3',
-    name: 'Chi nhánh 3',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_ID_3/pubhtml?widget=true&headers=false',
-    realUrl: 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_3/edit'
+    id: 'cutlerbay',
+    name: 'Cutlerbay',
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/1pZwSqVYBtxwtyatnf-0tjjJJsFGahGivY-qSk3qH_GQ/preview?gid=712613942',
+    realUrl: 'https://docs.google.com/spreadsheets/d/1pZwSqVYBtxwtyatnf-0tjjJJsFGahGivY-qSk3qH_GQ/edit',
+    stats: {
+      revenue: '$61.766,96',
+      salary: '$39.621,31',
+      profit: '$194.165,00'
+    }
   }
 ];
 
@@ -131,25 +135,31 @@ export default function ReportsPage() {
           exit={{ opacity: 0, y: -10 }}
           className="bg-brand-card border border-brand-border rounded-[32px] p-6 md:p-8 flex flex-col min-h-[600px] shadow-2xl relative overflow-hidden"
         >
-          {/* Top stats placeholders - can be removed if relying 100% on sheets */}
+          {/* Top stats - Analyzed from the linked Sheet */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5">
+            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5 group hover:border-emerald-500/30 transition-all">
               <div className="flex items-center gap-3 text-white/40 mb-2 text-xs font-bold uppercase tracking-widest">
                 <DollarSign size={14} className="text-emerald-500" /> Doanh Thu
               </div>
-              <div className="text-2xl font-black text-white">Xem file</div>
+              <div className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors">
+                {(activeBranch as any)?.stats?.revenue || '---'}
+              </div>
             </div>
-            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5">
+            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5 group hover:border-rose-500/30 transition-all">
               <div className="flex items-center gap-3 text-white/40 mb-2 text-xs font-bold uppercase tracking-widest">
                 <Users size={14} className="text-rose-500" /> Chi Phí Lương
               </div>
-              <div className="text-2xl font-black text-white">Xem file</div>
+              <div className="text-2xl font-black text-white group-hover:text-rose-400 transition-colors">
+                {(activeBranch as any)?.stats?.salary || '---'}
+              </div>
             </div>
-            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5">
+            <div className="bg-brand-bg rounded-2xl p-5 border border-white/5 group hover:border-brand-accent/30 transition-all">
               <div className="flex items-center gap-3 text-white/40 mb-2 text-xs font-bold uppercase tracking-widest">
                 <TrendingUp size={14} className="text-brand-accent" /> Lợi Nhuận
               </div>
-              <div className="text-2xl font-black text-white">Xem file</div>
+              <div className="text-2xl font-black text-white group-hover:text-brand-accent transition-colors">
+                {(activeBranch as any)?.stats?.profit || '---'}
+              </div>
             </div>
           </div>
 
@@ -165,33 +175,109 @@ export default function ReportsPage() {
               className="flex items-center gap-2 text-xs font-bold text-brand-purple hover:text-white uppercase tracking-widest transition-colors bg-white/5 px-4 py-2 rounded-xl"
             >
               Mở Google Sheets <ExternalLink size={14} />
-            </a>
           </div>
 
-          {/* Google Sheets Iframe Placeholder */}
-          <div className="flex-1 bg-white rounded-2xl overflow-hidden border border-white/10 relative min-h-[400px]">
-            {/* 
-              Hướng dẫn: 
-              Thay URL trong mảng BRANCH_SHEETS bằng URL nhúng (embed URL) của file Google Sheets của bạn. 
-              Cách lấy link nhúng: File > Share > Publish to web > Chọn Embed > Copy link trong <iframe src="...">
-            */}
-            {activeBranch?.sheetUrl.includes('YOUR_SHEET_ID') ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 p-8 text-center">
-                <Store size={48} className="text-gray-300 mb-4" />
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Chưa liên kết Google Sheets</h3>
-                <p className="text-gray-500 max-w-md text-sm">
-                  Vào file <code>src/components/ReportsPage.tsx</code> và thay thế <b>YOUR_SHEET_ID</b> bằng đường link file Google Sheets của bạn.
-                </p>
-              </div>
-            ) : (
-              <iframe 
-                src={activeBranch?.sheetUrl} 
-                className="w-full h-full border-0"
-                title={`Báo cáo ${activeBranch?.name}`}
-              ></iframe>
-            )}
+          <div className="flex-1 bg-white rounded-2xl overflow-hidden border border-white/10 relative min-h-[500px] mb-8">
+            <iframe 
+              src={activeBranch?.sheetUrl} 
+              className="w-full h-full border-0"
+              title={`Báo cáo ${activeBranch?.name}`}
+            ></iframe>
           </div>
 
+          <div className="flex items-center justify-between mb-4 mt-8 border-t border-white/5 pt-8">
+            <h2 className="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-2">
+              <FileText className="text-brand-accent" />
+              Mẫu Báo Cáo Excel
+            </h2>
+            <button 
+              onClick={() => {
+                const headers = ['Kỳ', 'CASH', 'Lợi Nhuận', 'Doanh thu', 'Lương Nhân Viên'];
+                const data = [
+                  ['TỔNG', '$8.510,00', '$63.046,00', '$291.467,00', '$212.855,00'],
+                  ['12/8-12/21', '$1.368,00', '$7.583,00', '$25.486,00', '$18.603,00'],
+                  ['12/22-1/11', '$3.074,00', '$11.057,00', '$31.968,00', '$20.911,00'],
+                  ['1/12-1/25', '$2.120,00', '$5.627,00', '$24.310,00', '$18.682,00'],
+                  ['1/26-02/8', '$525,00', '$5.505,00', '$21.853,00', '$16.348,00'],
+                  ['02/09-02/22', '$659,00', '$4.744,00', '$29.118,00', '$25.074,00'],
+                  ['02/23-03/08', '$145,00', '$836,00', '$29.615,00', '$29.615,00'],
+                  ['03/09-03/22', '$2.953,00', '$11.228,00', '$30.565,00', '$20.037,00'],
+                  ['03/23-04/05', '$2.392,00', '$11.584,00', '$32.018,00', '$21.133,00'],
+                  ['04/06-04/19', '$1.834,00', '$11.592,00', '$30.057,00', '$19.265,00'],
+                  ['4/25 chia lợi nhuận', '-$10.000,00', '-$20.000,00', '', ''],
+                  ['04/20-05/03', '$3.440,00', '$13.290,00', '$36.477,00', '$23.187,00']
+                ];
+                let csvContent = "data:text/csv;charset=utf-8," 
+                  + headers.join(",") + "\n"
+                  + data.map(e => e.join(",")).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Mau_Bao_Cao_${activeBranch?.name || 'Chi_Nhanh'}.csv`);
+                document.body.appendChild(link);
+                link.click();
+              }}
+              className="flex items-center gap-2 text-xs font-bold text-emerald-500 hover:text-white uppercase tracking-widest transition-colors bg-white/5 px-4 py-2 rounded-xl"
+            >
+              Tải File Mẫu (.csv) <File size={14} />
+            </button>
+          </div>
+
+          <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 mb-8 overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-yellow-400">
+                  <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Kỳ</th>
+                  <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">CASH</th>
+                  <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Lợi Nhuận</th>
+                  <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Doanh thu</th>
+                  <th className="p-3 border border-black/20 text-black font-black uppercase text-[10px]">Lương Nhân Viên</th>
+                </tr>
+              </thead>
+              <tbody className="text-white/80 text-[11px] font-medium">
+                <tr className="bg-white/5 font-bold text-white">
+                  <td className="p-3 border border-white/10 uppercase">TỔNG</td>
+                  <td className="p-3 border border-white/10 text-emerald-400">$8.510,00</td>
+                  <td className="p-3 border border-white/10 text-emerald-400">$63.046,00</td>
+                  <td className="p-3 border border-white/10">$291.467,00</td>
+                  <td className="p-3 border border-white/10 text-rose-400">$212.855,00</td>
+                </tr>
+                {[
+                  ['12/8-12/21', '$1.368,00', '$7.583,00', '$25.486,00', '$18.603,00'],
+                  ['12/22-1/11', '$3.074,00', '$11.057,00', '$31.968,00', '$20.911,00'],
+                  ['1/12-1/25', '$2.120,00', '$5.627,00', '$24.310,00', '$18.682,00'],
+                  ['1/26-02/8', '$525,00', '$5.505,00', '$21.853,00', '$16.348,00'],
+                  ['02/09-02/22', '$659,00', '$4.744,00', '$29.118,00', '$25.074,00'],
+                  ['02/23-03/08', '$145,00', '$836,00', '$29.615,00', '$29.615,00'],
+                  ['03/09-03/22', '$2.953,00', '$11.228,00', '$30.565,00', '$20.037,00'],
+                  ['03/23-04/05', '$2.392,00', '$11.584,00', '$32.018,00', '$21.133,00'],
+                  ['04/06-04/19', '$1.834,00', '$11.592,00', '$30.057,00', '$19.265,00'],
+                ].map((row, i) => (
+                  <tr key={i} className="hover:bg-white/5 transition-colors">
+                    <td className="p-3 border border-white/5 font-mono">{row[0]}</td>
+                    <td className="p-3 border border-white/5 text-emerald-500/80">{row[1]}</td>
+                    <td className="p-3 border border-white/5 text-emerald-500/80">{row[2]}</td>
+                    <td className="p-3 border border-white/5">{row[3]}</td>
+                    <td className="p-3 border border-white/5 text-rose-500/80">{row[4]}</td>
+                  </tr>
+                ))}
+                <tr className="bg-rose-500/10">
+                  <td className="p-3 border border-white/10 text-rose-500 font-bold uppercase">4/25 chia lợi nhuận</td>
+                  <td className="p-3 border border-white/10 text-rose-500 font-bold">-$10.000,00</td>
+                  <td className="p-3 border border-white/10 text-rose-500 font-bold">-$20.000,00</td>
+                  <td className="p-3 border border-white/10"></td>
+                  <td className="p-3 border border-white/10"></td>
+                </tr>
+                <tr>
+                  <td className="p-3 border border-white/5 font-mono">04/20-05/03</td>
+                  <td className="p-3 border border-white/5 text-emerald-500/80">$3.440,00</td>
+                  <td className="p-3 border border-white/5 text-emerald-500/80">$13.290,00</td>
+                  <td className="p-3 border border-white/5">$36.477,00</td>
+                  <td className="p-3 border border-white/5 text-rose-500/80">$23.187,00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>
