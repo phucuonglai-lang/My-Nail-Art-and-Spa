@@ -32,6 +32,9 @@ export default function SupplyPage() {
   const [creatorName, setCreatorName] = useState('');
   const [items, setItems] = useState<PurchaseOrderItem[]>([{ name: '', quantity: 1, isPurchased: false }]);
 
+  // Local changes state before clicking save
+  const [localChanges, setLocalChanges] = useState<Record<string, PurchaseOrderItem[]>>({});
+
   const BRANCHES = {
     kendall: { name: 'Kendall', pass: '19742', icon: '🏢' },
     cutlerbay: { name: 'Cutler Bay', pass: '18163', icon: '🌴' }
@@ -137,45 +140,71 @@ export default function SupplyPage() {
     }
   };
 
-  const handleToggleItemPurchased = async (orderId: string, itemIdx: number) => {
+  const handleToggleItemPurchasedLocal = (orderId: string, itemIdx: number) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
+
+    const currentItems = localChanges[orderId]
+      ? [...localChanges[orderId]]
+      : order.items.map(item => ({ ...item }));
+
+    currentItems[itemIdx].isPurchased = !currentItems[itemIdx].isPurchased;
+
+    setLocalChanges(prev => ({
+      ...prev,
+      [orderId]: currentItems
+    }));
+  };
+
+  const handleSaveLocalChanges = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    const updatedItems = localChanges[orderId];
+    if (!order || !updatedItems) return;
 
     const updaterName = prompt("Nhập tên của bạn để xác nhận hành động mua/sửa:", order.updatedBy || "");
     if (updaterName === null) return; // User cancelled
     if (!updaterName.trim()) {
-      alert("Bạn phải nhập tên để cập nhật trạng thái!");
+      alert("Bạn phải nhập tên để lưu thay đổi!");
       return;
     }
 
     try {
-      const updatedItems = [...order.items];
-      updatedItems[itemIdx] = {
-        ...updatedItems[itemIdx],
-        isPurchased: !updatedItems[itemIdx].isPurchased
-      };
-
       await updateDoc(doc(db, 'purchase_orders', orderId), {
         items: updatedItems,
         updatedAt: serverTimestamp(),
         updatedBy: updaterName.trim()
       });
 
+      setLocalChanges(prev => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
+      });
+
       fetchOrders();
     } catch (error: any) {
-      console.error("Toggle Item Purchased Error:", error);
+      console.error("Save Local Changes Error:", error);
       alert("Lỗi khi cập nhật trạng thái mua: " + (error.message || "Không rõ"));
     }
+  };
+
+  const handleCancelLocalChanges = (orderId: string) => {
+    setLocalChanges(prev => {
+      const copy = { ...prev };
+      delete copy[orderId];
+      return copy;
+    });
   };
 
   // Filter logic
   const filteredOrders = orders.filter(order => {
     if ((order.branch || 'kendall') !== currentBranch) return false;
 
+    const displayItems = localChanges[order.id] || order.items;
     const matchesSearch = order.creatorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          order.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                          displayItems.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const allPurchased = order.items.every(item => item.isPurchased);
+    const allPurchased = displayItems.every(item => item.isPurchased);
     const matchesFilter = filter === 'all' || 
                           (filter === 'completed' && allPurchased) ||
                           (filter === 'pending' && !allPurchased);
@@ -413,7 +442,9 @@ export default function SupplyPage() {
               )}
 
               {filteredOrders.map((order, idx) => {
-                const isAllPurchased = order.items.every(item => item.isPurchased);
+                const displayItems = localChanges[order.id] || order.items;
+                const isAllPurchased = displayItems.every(item => item.isPurchased);
+                const hasChanges = !!localChanges[order.id];
                 return (
                   <motion.div 
                     key={order.id}
@@ -487,10 +518,10 @@ export default function SupplyPage() {
                       <p className="text-[10px] font-black uppercase tracking-[2px] text-white/30 mb-4 block">Mặt hàng cần mua (Click để gạch ngang khi đã mua)</p>
                       
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {order.items.map((item, itemIdx) => (
+                        {displayItems.map((item, itemIdx) => (
                           <div 
                             key={itemIdx}
-                            onClick={() => handleToggleItemPurchased(order.id, itemIdx)}
+                            onClick={() => handleToggleItemPurchasedLocal(order.id, itemIdx)}
                             className={cn(
                               "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] select-none",
                               item.isPurchased 
@@ -520,6 +551,28 @@ export default function SupplyPage() {
                           </div>
                         ))}
                       </div>
+
+                      {/* Local Changes Save / Reset Banner */}
+                      {hasChanges && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-6 flex items-center justify-end gap-3 border-t border-white/5 pt-4"
+                        >
+                          <button 
+                            onClick={() => handleCancelLocalChanges(order.id)}
+                            className="px-4 py-2.5 rounded-xl bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest border border-white/5 active:scale-95"
+                          >
+                            Hủy bỏ thay đổi
+                          </button>
+                          <button 
+                            onClick={() => handleSaveLocalChanges(order.id)}
+                            className="px-5 py-2.5 rounded-xl bg-brand-blue text-white hover:bg-brand-blue/90 transition-all text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-blue/20 flex items-center gap-2 active:scale-95 animate-pulse hover:animate-none"
+                          >
+                            <CheckCircle2 size={12} /> Lưu thay đổi
+                          </button>
+                        </motion.div>
+                      )}
                     </div>
 
                     {/* Card Footer: History Log */}
