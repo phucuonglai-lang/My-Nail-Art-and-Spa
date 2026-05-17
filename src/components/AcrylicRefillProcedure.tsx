@@ -287,7 +287,7 @@ const AcrylicRefillProcedure = () => {
                     type="text"
                     value={editingStep.title}
                     onChange={e => setEditingStep({...editingStep, title: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors text-slate-900 placeholder:text-slate-400"
                   />
                 </div>
                 <div>
@@ -295,7 +295,7 @@ const AcrylicRefillProcedure = () => {
                   <textarea 
                     value={editingStep.desc}
                     onChange={e => setEditingStep({...editingStep, desc: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors min-h-[80px]"
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors min-h-[80px] text-slate-900 placeholder:text-slate-400"
                   />
                 </div>
                 <div>
@@ -305,7 +305,7 @@ const AcrylicRefillProcedure = () => {
                     value={editingStep.videoUrl || ''}
                     onChange={e => setEditingStep({...editingStep, videoUrl: e.target.value})}
                     placeholder="YouTube or Bunny.net URL"
-                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors text-slate-900 placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -321,7 +321,7 @@ const AcrylicRefillProcedure = () => {
                 </button>
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="px-6 py-3 border border-brand-border rounded-xl font-bold uppercase tracking-widest text-brand-text/60 hover:bg-slate-50 transition-all"
+                  className="px-6 py-3 border border-slate-200 rounded-xl font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
                 >
                   Cancel
                 </button>
