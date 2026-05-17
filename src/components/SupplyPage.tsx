@@ -34,6 +34,25 @@ export default function SupplyPage() {
   // Local changes state before clicking save
   const [localChanges, setLocalChanges] = useState<Record<string, PurchaseOrderItem[]>>({});
 
+  // Supply page passcode states
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('supply_page_auth') === 'true';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === '305801') {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('supply_page_auth', 'true');
+      setPasswordError('');
+    } else {
+      setPasswordError('Mật khẩu không chính xác. Vui lòng thử lại!');
+      setPasswordInput('');
+    }
+  };
+
   const BRANCH_INFO = {
     kendall: { name: 'Kendall', icon: '🏢', color: 'text-brand-blue bg-brand-blue/10 border-brand-blue/20' },
     cutlerbay: { name: 'Cutler Bay', icon: '🌴', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' }
@@ -230,6 +249,78 @@ export default function SupplyPage() {
     }
     return new Date(timestamp).toLocaleString('vi-VN');
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-transparent pt-24 pb-24 px-6 flex items-center justify-center relative overflow-hidden">
+        {/* Background gradients */}
+        <div className="absolute top-0 left-0 w-full h-full -z-10 opacity-30 pointer-events-none">
+          <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-brand-blue/10 blur-[120px] rounded-full" />
+          <div className="absolute bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-rose-500/10 blur-[120px] rounded-full" />
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-brand-card border border-white/10 rounded-[32px] p-8 md:p-12 w-full max-w-md relative z-10 shadow-2xl text-center flex flex-col items-center"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue mb-6 shadow-lg shadow-brand-blue/10 animate-bounce">
+            <Lock size={28} />
+          </div>
+
+          <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2">
+            Hệ Thống Yêu Cầu Mua Hàng
+          </h2>
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8">
+            Khu vực bảo mật chi nhánh
+          </p>
+
+          <form onSubmit={handlePasswordSubmit} className="w-full space-y-4">
+            <div className="relative">
+              <input 
+                type="password" 
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Nhập mã bảo mật để mở khóa..."
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-center text-white placeholder-white/20 focus:border-brand-blue focus:outline-none transition-colors font-bold text-sm tracking-widest"
+                autoFocus
+              />
+            </div>
+
+            <AnimatePresence>
+              {passwordError && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex items-center gap-2 text-rose-500 justify-center text-[11px] font-bold"
+                >
+                  <AlertTriangle size={14} />
+                  <span>{passwordError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <button 
+              type="submit"
+              className="w-full bg-brand-blue text-white py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-brand-blue/20 hover:scale-[1.02] transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
+            >
+              <span>Xác nhận mở khóa</span>
+              <ArrowRight size={14} />
+            </button>
+          </form>
+
+          <Link 
+            to="/"
+            className="mt-8 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft size={12} /> Quay lại trang chủ
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-transparent pt-24 pb-24 px-6 relative overflow-hidden">
