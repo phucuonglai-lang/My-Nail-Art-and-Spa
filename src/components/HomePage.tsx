@@ -162,7 +162,7 @@ export default function HomePage() {
       </section>
 
       {/* About Section */}
-      <section className="py-40 px-6 bg-brand-card border-y border-brand-border overflow-hidden relative">
+      <section className="py-40 px-6 bg-transparent border-y border-white/5 overflow-hidden relative">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center relative z-10">
           <div>
             <span className="text-brand-accent font-bold uppercase tracking-[6px] text-[10px] mb-8 block px-3 py-1 border border-brand-accent/20 rounded-full w-fit">About Us</span>
