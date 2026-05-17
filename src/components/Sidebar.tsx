@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Package,
   Award,
-  BookOpen
+  BookOpen,
+  Globe
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -89,6 +90,15 @@ export default function Sidebar() {
       color: 'text-amber-500',
       path: '/announcements',
       children: []
+    },
+    {
+      id: 'utilities',
+      label: 'Tiện ích',
+      icon: Sparkles,
+      color: 'text-brand-purple',
+      children: [
+        { label: 'Bộ Dịch Đa Ngôn Ngữ', path: 'https://translator-steven.vercel.app/', icon: Globe }
+      ]
     }
   ];
 
@@ -196,17 +206,36 @@ export default function Sidebar() {
                         className="overflow-hidden"
                       >
                         <div className="pl-6 space-y-2 py-2">
-                          {item.children.map((child, cIdx) => (
-                            <Link
-                              key={cIdx}
-                              to={child.path}
-                              onClick={() => setIsOpen(false)}
-                              className="flex items-center gap-4 p-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white hover:bg-white/5 transition-all group/item"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/item:bg-brand-accent transition-colors" />
-                              {child.label}
-                            </Link>
-                          ))}
+                          {item.children.map((child, cIdx) => {
+                            const isExternal = child.path.startsWith('http');
+                            const ChildIcon = child.icon || Globe;
+                            if (isExternal) {
+                              return (
+                                <a
+                                  key={cIdx}
+                                  href={child.path}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => setIsOpen(false)}
+                                  className="flex items-center gap-4 p-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white hover:bg-white/5 transition-all group/item"
+                                >
+                                  <ChildIcon size={14} className="text-white/20 group-hover/item:text-brand-purple shrink-0 transition-colors" />
+                                  {child.label}
+                                </a>
+                              );
+                            }
+                            return (
+                              <Link
+                                key={cIdx}
+                                to={child.path}
+                                onClick={() => setIsOpen(false)}
+                                className="flex items-center gap-4 p-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white hover:bg-white/5 transition-all group/item"
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/item:bg-brand-accent transition-colors" />
+                                {child.label}
+                              </Link>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}
