@@ -77,7 +77,7 @@ export default function Sidebar() {
     },
     {
       id: 'supply',
-      label: 'Kho & Vật tư',
+      label: 'Phiếu hàng cần mua',
       icon: Package,
       color: 'text-brand-blue',
       path: '/supply',

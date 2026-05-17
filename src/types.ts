@@ -138,3 +138,20 @@ export interface WorkEvaluation {
   annotatedImageUrls?: string[];
   createdAt: any;
 }
+
+export interface PurchaseOrderItem {
+  name: string;
+  quantity: number;
+  isPurchased: boolean;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  branch: 'kendall' | 'cutlerbay';
+  creatorName: string;
+  updatedBy?: string;
+  items: PurchaseOrderItem[];
+  createdAt: any;
+  updatedAt?: any;
+}
+
