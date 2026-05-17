@@ -21,7 +21,7 @@ import GelXProcedure from './components/GelXProcedure';
 import AcrylicProcedure from './components/AcrylicProcedure';
 import AcrylicRefillProcedure from './components/AcrylicRefillProcedure';
 import ProcedureTemplate from './components/ProcedureTemplate';
-import YouTube from 'react-youtube';
+import VideoPlayer from './components/VideoPlayer';
 import HomePage from './components/HomePage';
 import LibraryPage from './components/LibraryPage';
 import ProceduresPage from './components/ProceduresPage';
@@ -314,10 +314,7 @@ function LessonPage() {
   };
 
   const getVideoId = (url: string) => {
-    if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : url; // Trả về chính nó nếu là ID sẵn
+    return url || '';
   };
 
   if (loading) return (
@@ -337,19 +334,11 @@ function LessonPage() {
     <div className="pt-16 min-h-screen bg-brand-text flex flex-col md:flex-row relative">
       <div className="flex-1 bg-black flex flex-col overflow-hidden">
         <div className="flex-1 min-h-[300px] md:min-h-0 relative">
-          <YouTube
-            videoId={getVideoId(lesson.videoUrl)}
+          <VideoPlayer
+            videoUrl={getVideoId(lesson.videoUrl)}
             onEnd={handleEnd}
             containerClassName="w-full h-full absolute inset-0"
             className="w-full h-full"
-            opts={{
-              width: '100%',
-              height: '100%',
-              playerVars: {
-                autoplay: 1,
-                modestbranding: 1,
-              },
-            }}
           />
         </div>
         

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ Đồ Tư Duy - NailPro Academy</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --card: #16161a;
+            --accent: #ff3b7e;
+            --purple: #9d4edd;
+            --blue: #00d2ff;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 30px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(255, 59, 126, 0.1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .card.admin::before { background: var(--purple); }
+        .card.supply::before { background: var(--blue); }
+        .card.academy::before { background: #4cc9f0; }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card .badge {
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 10px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0 0 0;
+        }
+
+        li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        li::before {
+            content: '→';
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 60px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .password-box {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .password-box strong {
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>NailPro Academy</h1>
+        <p>Sơ đồ cấu trúc hệ thống website</p>
+    </div>
+
+    <div class="map-container">
+        <!-- Admin Section -->
+        <div class="card admin">
+            <h2>⚙️ QUẢN TRỊ <span class="badge">CHUNG</span></h2>
+            <ul>
+                <li>Quản lý Khóa học & Bài giảng</li>
+                <li>Cập nhật Quy trình kỹ thuật</li>
+                <li>Đăng tải Nội quy & Tài liệu PDF</li>
+            </ul>
+            <div class="password-box">
+                Mật mã truy cập: <strong>19742</strong>
+            </div>
+        </div>
+
+        <!-- Portfolio Section -->
+        <div class="card">
+            <h2>📸 HỒ SƠ TAY NGHỀ <span class="badge">NHÂN VIÊN</span></h2>
+            <ul>
+                <li>Khách hàng xem hồ sơ công khai</li>
+                <li>Admin đăng tác phẩm & Chấm điểm</li>
+                <li>Hệ thống đánh giá trên hình ảnh</li>
+                <li>Quản lý danh sách nhân sự</li>
+            </ul>
+            <div class="password-box">
+                Mật mã thao tác: <strong>19742</strong>
+            </div>
+        </div>
+
+        <!-- Supply Section -->
+        <div class="card supply">
+            <h2>📦 KHO & VẬT TƯ <span class="badge">CHI NHÁNH</span></h2>
+            <ul>
+                <li><strong>Kendall</strong>: Quản lý vật tư riêng</li>
+                <li><strong>Cutler Bay</strong>: Quản lý vật tư riêng</li>
+                <li>Dashboard báo động hết hàng</li>
+                <li>Lịch sử kiểm kê hàng tháng</li>
+            </ul>
+        </div>
+
+        <!-- Academy Section -->
+        <div class="card academy">
+            <h2>🎓 HỆ THỐNG ĐÀO TẠO <span class="badge">E-LEARNING</span></h2>
+            <ul>
+                <li>Học qua Video Tutorials YouTube</li>
+                <li>Tra cứu quy trình chuẩn 3 bước</li>
+                <li>Đa ngôn ngữ: Việt - Anh - Tây Ban Nha</li>
+                <li>Tương thích hoàn toàn trên Di động</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; 2026 NailPro Academy - Hệ thống được thiết kế bởi Steven Lai Pro
+    </div>
+
+</body>
+</html>

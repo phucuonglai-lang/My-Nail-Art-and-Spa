@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import YouTube from 'react-youtube';
+import VideoPlayer from './VideoPlayer';
 import { 
   Scissors, 
   Sparkles, 
@@ -69,10 +69,7 @@ const ProcedureTemplate: React.FC<ProcedureTemplateProps> = ({
   }, [procedureId]);
 
   const getVideoId = (url: string) => {
-    if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : url;
+    return url || '';
   };
 
   // Get icons based on procedure ID or from props
@@ -161,18 +158,10 @@ const ProcedureTemplate: React.FC<ProcedureTemplateProps> = ({
                           animate={{ opacity: 1, scale: 1 }}
                           className="relative mt-10 aspect-video rounded-[32px] overflow-hidden bg-black shadow-2xl border-4 border-white/5"
                         >
-                          <YouTube
-                            videoId={videoId}
+                          <VideoPlayer
+                            videoUrl={videoId}
                             containerClassName="w-full h-full"
                             className="w-full h-full"
-                            opts={{
-                              width: '100%',
-                              height: '100%',
-                              playerVars: {
-                                autoplay: 1,
-                                modestbranding: 1,
-                              },
-                            }}
                           />
                         </motion.div>
                       )}

@@ -20,7 +20,7 @@ import { cn } from '../lib/utils';
 import { collection, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { ProcedureStep } from '../types';
-import YouTube from 'react-youtube';
+import VideoPlayer from './VideoPlayer';
 
 const AcrylicRefillProcedure = () => {
   const { t } = useLanguage();
@@ -51,10 +51,7 @@ const AcrylicRefillProcedure = () => {
   }, []);
 
   const getVideoId = (url: string) => {
-    if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : url;
+    return url || '';
   };
 
   const getPhaseSteps = (stepIndices: number[]) => {
@@ -209,18 +206,10 @@ const AcrylicRefillProcedure = () => {
                         animate={{ opacity: 1, height: 'auto' }}
                         className="mt-4 rounded-xl overflow-hidden aspect-video bg-black"
                       >
-                        <YouTube 
-                          videoId={videoId}
+                        <VideoPlayer 
+                          videoUrl={videoId}
+                          containerClassName="w-full h-full"
                           className="w-full h-full"
-                          opts={{
-                            width: '100%',
-                            height: '100%',
-                            playerVars: { 
-                              modestbranding: 1,
-                              origin: window.location.origin,
-                              playsinline: 1
-                            }
-                          }}
                         />
                       </motion.div>
                     )}
@@ -310,12 +299,12 @@ const AcrylicRefillProcedure = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/40 mb-1 block">YouTube Video URL</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-brand-text/40 mb-1 block">Video URL (YouTube/Bunny.net)</label>
                   <input 
                     type="text"
                     value={editingStep.videoUrl || ''}
                     onChange={e => setEditingStep({...editingStep, videoUrl: e.target.value})}
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="YouTube or Bunny.net URL"
                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-teal-400 transition-colors"
                   />
                 </div>

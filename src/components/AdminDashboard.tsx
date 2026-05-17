@@ -1372,7 +1372,7 @@ export default function AdminDashboard() {
                           type="text" 
                           value={newLesson.videoUrl} 
                           onChange={e => setNewLesson({...newLesson, videoUrl: e.target.value})}
-                          placeholder="YouTube Link"
+                          placeholder="YouTube/Bunny.net URL"
                           className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
                         />
                       </div>
@@ -1480,7 +1480,7 @@ export default function AdminDashboard() {
                           type="text" 
                           value={newStep.videoUrl} 
                           onChange={e => setNewStep({...newStep, videoUrl: e.target.value})}
-                          placeholder="YouTube URL"
+                          placeholder="YouTube/Bunny.net URL"
                           className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
                         />
                       </div>
