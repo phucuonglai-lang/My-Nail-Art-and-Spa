@@ -145,6 +145,11 @@ export interface PurchaseOrderItem {
   isPurchased: boolean;
 }
 
+export interface PurchaseOrderHistory {
+  updatedBy: string;
+  updatedAt: any;
+}
+
 export interface PurchaseOrder {
   id: string;
   branch: 'kendall' | 'cutlerbay';
@@ -153,5 +158,6 @@ export interface PurchaseOrder {
   items: PurchaseOrderItem[];
   createdAt: any;
   updatedAt?: any;
+  history?: PurchaseOrderHistory[];
 }
 
