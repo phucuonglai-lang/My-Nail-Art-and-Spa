@@ -63,6 +63,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Purchase Orders
+    match /purchase_orders/{orderId} {
+      allow read, write: if true;
+    }
+
     // Fallback: Deny everything else
     match /{document=**} {
       allow read, write: if false;
