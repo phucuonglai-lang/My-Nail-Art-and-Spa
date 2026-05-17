@@ -406,7 +406,20 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <HashRouter>
-          <div className="min-h-screen bg-transparent text-brand-text selection:bg-brand-accent/30 font-sans">
+          <div className="min-h-screen bg-transparent text-brand-text selection:bg-brand-accent/30 font-sans relative">
+            {/* Global Video Background */}
+            <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none w-full h-full">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover opacity-35"
+                src="/background.mp4"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#2d0630]/60 via-[#1e0b40]/70 to-[#0a132e]/60" />
+            </div>
+
             <Routes>
               <Route path="/admin" element={
                 <SharedLayout>
