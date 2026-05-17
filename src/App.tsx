@@ -29,6 +29,7 @@ import Sidebar from './components/Sidebar';
 import ReportsPage from './components/ReportsPage';
 import SupplyPage from './components/SupplyPage';
 import PortfolioPage from './components/PortfolioPage';
+import AnnouncementsPage from './components/AnnouncementsPage';
 
 // --- Layouts ---
 
@@ -440,6 +441,11 @@ export default function App() {
               <Route path="/procedures" element={
                 <SharedLayout>
                   <ProceduresPage />
+                </SharedLayout>
+              } />
+              <Route path="/announcements" element={
+                <SharedLayout>
+                  <AnnouncementsPage />
                 </SharedLayout>
               } />
               <Route path="/course/:courseId" element={

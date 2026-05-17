@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch, setDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Course, Lesson, Procedure, ProcedureStep, Policy } from '../types';
-import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck, Lock, ArrowRight, Megaphone } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { cn } from '../lib/utils';
 import { serverTimestamp } from 'firebase/firestore';
@@ -119,8 +119,9 @@ export default function AdminDashboard() {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [steps, setSteps] = useState<ProcedureStep[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'courses' | 'lessons' | 'procedures' | 'steps' | 'policies'>('courses');
+  const [view, setView] = useState<'courses' | 'lessons' | 'procedures' | 'steps' | 'policies' | 'announcements'>('courses');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(null);
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
   const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuth, setIsAuth] = useState(false);
   const [passError, setPassError] = useState('');
@@ -160,6 +162,12 @@ export default function AdminDashboard() {
   });
   const [newPolicy, setNewPolicy] = useState<Partial<Policy>>({
     title: '', type: 'pdf', url: '', content: ''
+  });
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    title: '',
+    type: 'text' as 'text' | 'html' | 'image' | 'pdf',
+    content: '',
+    desc: ''
   });
   const [uploading, setUploading] = useState(false);
 
@@ -246,6 +254,15 @@ export default function AdminDashboard() {
       } catch (e) {
         handleFirestoreError(e, OperationType.LIST, 'policies');
       }
+
+      // Fetch Announcements
+      try {
+        const annSnap = await getDocs(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')));
+        const annData = annSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        setAnnouncements(annData);
+      } catch (e) {
+        console.error("Fetch Announcements Error:", e);
+      }
     } catch (error) {
       console.error("Fetch Data Error:", error);
     } finally {
@@ -300,6 +317,86 @@ export default function AdminDashboard() {
     const stepsSnap = await getDocs(q);
     const stepsData = stepsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProcedureStep));
     setSteps(stepsData);
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const annSnap = await getDocs(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')));
+      const annData = annSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      setAnnouncements(annData);
+    } catch (e) {
+      console.error("Fetch Announcements Error:", e);
+    }
+  };
+
+  const handleAnnouncementFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 800 * 1024) {
+      alert("Tệp quá lớn. Vui lòng chọn tệp dưới 800KB để đảm bảo hiệu suất.");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNewAnnouncement(prev => ({ ...prev, content: base64 }));
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      alert("Lỗi khi đọc tệp.");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddAnnouncement = async () => {
+    if (!newAnnouncement.title) {
+      alert("Vui lòng nhập tiêu đề thông báo");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const docData = {
+        title: newAnnouncement.title,
+        type: newAnnouncement.type,
+        content: newAnnouncement.content,
+        desc: newAnnouncement.desc,
+        createdAt: editingAnnouncementId 
+          ? (announcements.find(a => a.id === editingAnnouncementId)?.createdAt || serverTimestamp()) 
+          : serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingAnnouncementId) {
+        await updateDoc(doc(db, 'announcements', editingAnnouncementId), docData);
+      } else {
+        await addDoc(collection(db, 'announcements'), docData);
+      }
+      setIsAdding(false);
+      setEditingAnnouncementId(null);
+      setNewAnnouncement({ title: '', type: 'text', content: '', desc: '' });
+      fetchAnnouncements();
+    } catch (error) {
+      console.error("Save Announcement Error:", error);
+      alert("Lỗi khi lưu thông báo: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!window.confirm("Xác nhận xóa thông báo này?")) return;
+    try {
+      await deleteDoc(doc(db, 'announcements', id));
+      fetchAnnouncements();
+    } catch (error) {
+      console.error("Delete Announcement Error:", error);
+      alert("Lỗi khi xóa thông báo: " + (error instanceof Error ? error.message : String(error)));
+    }
   };
 
   const handleAddProcedure = async () => {
@@ -573,11 +670,13 @@ export default function AdminDashboard() {
     setEditingProcedureId(null);
     setEditingStepId(null);
     setEditingPolicyId(null);
+    setEditingAnnouncementId(null);
     setNewCourse({ title: '', description: '', thumbnail: '', category: 'Gel Art', level: 'beginner' });
     setNewLesson({ title: '', videoUrl: '', content: '', order: 0 });
     setNewProcedure({ id: '', icon: 'ClipboardList', color: 'text-brand-accent' });
     setNewStep({ title: '', desc: '', videoUrl: '', order: 0 });
     setNewPolicy({ title: '', type: 'pdf', url: '', content: '' });
+    setNewAnnouncement({ title: '', type: 'text', content: '', desc: '' });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -798,7 +897,8 @@ export default function AdminDashboard() {
             {[
               { id: 'courses', label: t.admin.courses },
               { id: 'procedures', label: t.admin.procedures_tab },
-              { id: 'policies', label: 'QUY ĐỊNH' }
+              { id: 'policies', label: 'QUY ĐỊNH' },
+              { id: 'announcements', label: 'THÔNG BÁO' }
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -1196,6 +1296,93 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {view === 'announcements' && (
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-white/50">HỆ THỐNG THÔNG BÁO BÀI ĐĂNG</h2>
+              <button 
+                onClick={() => { setIsAdding(true); setEditingAnnouncementId(null); setNewAnnouncement({ title: '', type: 'text', content: '', desc: '' }); }}
+                className="flex items-center gap-3 bg-gradient-to-r from-brand-accent to-brand-purple text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all active:scale-95"
+              >
+                <Plus size={18} /> THÊM THÔNG BÁO
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {announcements.length > 0 ? announcements.map(ann => (
+                <div key={ann.id} className="bg-brand-card p-8 rounded-[40px] border border-brand-border hover:border-brand-accent/50 shadow-2xl transition-all group relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                  <div>
+                    <div className="flex items-center justify-between mb-6 relative z-10">
+                      <div className={cn(
+                        "w-14 h-14 rounded-[22px] flex items-center justify-center shadow-xl",
+                        ann.type === 'pdf' ? "bg-rose-500/10 text-rose-500" : 
+                        ann.type === 'image' ? "bg-brand-blue/10 text-brand-blue" :
+                        ann.type === 'html' ? "bg-purple-500/10 text-purple-500" : "bg-emerald-500/10 text-emerald-500"
+                      )}>
+                        {ann.type === 'pdf' && <FileText size={24} />}
+                        {ann.type === 'image' && <ImageIcon size={24} />}
+                        {ann.type === 'html' && <Code size={24} />}
+                        {ann.type === 'text' && <File size={24} />}
+                      </div>
+                      <div className="flex items-center gap-2 opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                         <button 
+                           onClick={() => {
+                             setEditingAnnouncementId(ann.id);
+                             setNewAnnouncement({ title: ann.title, type: ann.type, content: ann.content || '', desc: ann.desc || '' });
+                             setIsAdding(true);
+                           }}
+                           className="w-10 h-10 bg-white/5 text-brand-blue hover:bg-brand-blue hover:text-white rounded-xl transition-all flex items-center justify-center shadow-lg"
+                           title="Sửa"
+                         >
+                           <Edit2 size={16} />
+                         </button>
+                         <button 
+                           onClick={() => handleDeleteAnnouncement(ann.id)}
+                           className="w-10 h-10 bg-white/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all flex items-center justify-center shadow-lg"
+                           title="Xóa"
+                         >
+                           <Trash2 size={16} />
+                         </button>
+                      </div>
+                    </div>
+                    
+                    <h3 className="font-bold text-lg text-white uppercase tracking-tight mb-2 relative z-10 line-clamp-2 leading-snug">{ann.title}</h3>
+                    {ann.desc && <p className="text-white/40 text-xs mb-4 line-clamp-2 leading-relaxed">{ann.desc}</p>}
+                  </div>
+
+                  <div className="flex items-center gap-3 relative z-10 mt-6 border-t border-white/5 pt-4">
+                    <span className="text-[9px] font-black uppercase tracking-[3px] px-3 py-1 bg-white/5 rounded-full text-white/40">
+                      {ann.type === 'pdf' ? 'PDF FILE' :
+                       ann.type === 'image' ? 'HÌNH ẢNH' :
+                       ann.type === 'html' ? 'HTML PAGE' : 'VĂN BẢN'}
+                    </span>
+                    <span className="text-[9px] text-white/20 font-bold ml-auto font-mono">
+                      {ann.createdAt ? new Date(ann.createdAt.seconds * 1000).toLocaleDateString('vi-VN') : 'Đang xử lý...'}
+                    </span>
+                  </div>
+                </div>
+              )) : null}
+
+              {/* Quick Add Announcement Card */}
+              <button 
+                onClick={() => { setIsAdding(true); setEditingAnnouncementId(null); setNewAnnouncement({ title: '', type: 'text', content: '', desc: '' }); }}
+                className="aspect-[16/10] bg-white/5 rounded-[40px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 group hover:bg-white/10 hover:border-brand-accent/50 transition-all cursor-pointer min-h-[220px]"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-accent group-hover:text-white transition-all shadow-xl">
+                  <Plus size={32} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[4px] text-white/20 group-hover:text-white transition-all">THÊM THÔNG BÁO</span>
+              </button>
+
+              {announcements.length === 0 && (
+                <div className="col-span-full py-40 text-center bg-white/5 rounded-[60px] border-2 border-dashed border-brand-border mt-8">
+                  <p className="text-white/10 italic uppercase tracking-[0.3em] font-black">Chưa có thông báo nào được tạo.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Modal-like Overlay for Forms */}
         <AnimatePresence>
           {isAdding && (
@@ -1225,6 +1412,7 @@ export default function AdminDashboard() {
                     {view === 'procedures' && (editingProcedureId ? 'Sửa quy trình' : t.admin.add_procedure)}
                     {view === 'steps' && (editingStepId ? t.admin.edit_step : t.admin.add_step)}
                     {view === 'policies' && (editingPolicyId ? 'Sửa tài liệu' : 'Thêm tài liệu')}
+                    {view === 'announcements' && (editingAnnouncementId ? 'Sửa thông báo' : 'Thêm thông báo')}
                     <span className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-white/40 ml-2">V2.1</span>
                   </h2>
                 </div>
@@ -1611,6 +1799,200 @@ export default function AdminDashboard() {
                          >
                            {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
                            {editingPolicyId ? 'Lưu thay đổi' : 'Thêm tài liệu'}
+                         </button>
+                      </div>
+                    </>
+                  )}
+
+                  {view === 'announcements' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Tiêu đề thông báo</label>
+                        <input 
+                          type="text" 
+                          value={newAnnouncement.title} 
+                          onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+                          placeholder="e.g., Lịch nghỉ lễ Tạ ơn, Khuyến mãi mùa hè..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all placeholder:text-white/10"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Mô tả ngắn gọn</label>
+                        <input 
+                          type="text" 
+                          value={newAnnouncement.desc} 
+                          onChange={e => setNewAnnouncement({...newAnnouncement, desc: e.target.value})}
+                          placeholder="e.g., Thông báo về việc thay đổi thời gian mở cửa..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-bold transition-all placeholder:text-white/10"
+                        />
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Định dạng nội dung</label>
+                        <div className="grid grid-cols-4 gap-4">
+                          {(['text', 'html', 'image', 'pdf'] as const).map(ti => (
+                            <button
+                              key={ti}
+                              type="button"
+                              onClick={() => setNewAnnouncement({...newAnnouncement, type: ti, content: ''})}
+                              className={cn(
+                                "py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[3px] border transition-all active:scale-95",
+                                newAnnouncement.type === ti ? "bg-gradient-to-r from-brand-accent to-brand-purple text-white border-transparent" : "bg-white/5 text-white/20 border-white/5 hover:text-white hover:bg-white/10"
+                              )}
+                            >
+                              {ti === 'text' ? 'Văn bản' : ti === 'html' ? 'HTML' : ti === 'image' ? 'Hình ảnh' : 'PDF File'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {newAnnouncement.type === 'text' && (
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Nội dung thông báo (Văn bản)</label>
+                          <textarea 
+                            value={newAnnouncement.content} 
+                            onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white text-sm leading-relaxed transition-all min-h-[220px] resize-none"
+                            placeholder="Nhập nội dung thông báo tại đây..."
+                          />
+                        </div>
+                      )}
+
+                      {newAnnouncement.type === 'html' && (
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Nội dung thông báo (HTML)</label>
+                          <textarea 
+                            value={newAnnouncement.content} 
+                            onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white text-sm leading-relaxed transition-all min-h-[260px] font-mono resize-none"
+                            placeholder="Nhập mã HTML hoặc thiết kế của bài đăng..."
+                          />
+                        </div>
+                      )}
+
+                      {newAnnouncement.type === 'image' && (
+                        <div className="space-y-6">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Upload hình ảnh bài đăng</label>
+                            <div className="relative">
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleAnnouncementFileChange}
+                                className="hidden"
+                                id="announcement-image-upload"
+                              />
+                              <label 
+                                htmlFor="announcement-image-upload"
+                                className={cn(
+                                  "w-full flex flex-col items-center justify-center gap-4 p-8 border-2 border-dashed rounded-[32px] cursor-pointer transition-all active:scale-[0.98]",
+                                  newAnnouncement.content && newAnnouncement.content.startsWith('data:image') ? "border-brand-accent bg-brand-accent/10 text-brand-accent" : "border-white/10 bg-white/5 text-white/10 hover:border-white/30 hover:text-white/30"
+                                )}
+                              >
+                                {uploading ? (
+                                  <RefreshCw className="animate-spin" size={32} />
+                                ) : newAnnouncement.content && newAnnouncement.content.startsWith('data:image') ? (
+                                  <div className="flex flex-col items-center gap-4">
+                                    <img src={newAnnouncement.content} className="max-h-[140px] rounded-xl object-contain border border-white/10" alt="Preview" />
+                                    <span className="text-[9px] font-black uppercase tracking-[2px] text-brand-accent/80">Nhấp để thay đổi ảnh</span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Plus size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Chọn hình ảnh từ thiết bị</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <span className="relative px-6 bg-brand-card text-[9px] font-black uppercase tracking-[4px] text-white/20">HOẶC DÁN ĐƯỜNG LINK ẢNH</span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Đường dẫn hình ảnh ngoài</label>
+                            <input 
+                              type="text" 
+                              value={newAnnouncement.content && newAnnouncement.content.startsWith('data:') ? '' : newAnnouncement.content} 
+                              onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                              placeholder="https://bunny.net/my-image.png..."
+                              className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {newAnnouncement.type === 'pdf' && (
+                        <div className="space-y-6">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Upload File PDF</label>
+                            <div className="relative">
+                              <input 
+                                type="file" 
+                                accept=".pdf"
+                                onChange={handleAnnouncementFileChange}
+                                className="hidden"
+                                id="announcement-pdf-upload"
+                              />
+                              <label 
+                                htmlFor="announcement-pdf-upload"
+                                className={cn(
+                                  "w-full flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed rounded-[32px] cursor-pointer transition-all active:scale-[0.98]",
+                                  newAnnouncement.content && newAnnouncement.content.startsWith('data:application/pdf') ? "border-rose-500 bg-rose-500/10 text-rose-500" : "border-white/10 bg-white/5 text-white/10 hover:border-white/30 hover:text-white/30"
+                                )}
+                              >
+                                {uploading ? (
+                                  <RefreshCw className="animate-spin" size={32} />
+                                ) : newAnnouncement.content && newAnnouncement.content.startsWith('data:application/pdf') ? (
+                                  <>
+                                    <ShieldCheck size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Tệp PDF đã xử lý thành công</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus size={32} />
+                                    <span className="text-[10px] font-black uppercase tracking-[3px]">Chọn tệp PDF từ thiết bị</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <span className="relative px-6 bg-brand-card text-[9px] font-black uppercase tracking-[4px] text-white/20">HOẶC DÁN ĐƯỜNG LINK FILE PDF</span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Đường dẫn tệp PDF ngoài</label>
+                            <input 
+                              type="text" 
+                              value={newAnnouncement.content && newAnnouncement.content.startsWith('data:') ? '' : newAnnouncement.content} 
+                              onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                              placeholder="https://bunny.net/my-file.pdf..."
+                              className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-accent/50 text-white font-mono text-xs transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-4 pt-4 mt-10 border-t border-white/5">
+                         <button 
+                           onClick={() => { setIsAdding(false); setEditingAnnouncementId(null); setNewAnnouncement({title: '', type: 'text', content: '', desc: ''}); }}
+                           className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                         >
+                           {t.admin.cancel}
+                         </button>
+                         <button 
+                           onClick={handleAddAnnouncement}
+                           disabled={loading}
+                           className="flex-[2] bg-gradient-to-r from-brand-accent to-brand-purple text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-accent/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                         >
+                           {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
+                           {editingAnnouncementId ? 'Lưu thay đổi' : 'Đăng thông báo'}
                          </button>
                       </div>
                     </>

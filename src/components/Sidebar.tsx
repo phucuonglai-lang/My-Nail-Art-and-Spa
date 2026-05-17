@@ -17,7 +17,6 @@ import {
   Zap,
   RefreshCw,
   Package,
-  Package,
   Award,
   BookOpen
 } from 'lucide-react';
@@ -88,9 +87,8 @@ export default function Sidebar() {
       label: t.nav.sidebar.news,
       icon: Bell,
       color: 'text-amber-500',
-      children: [
-        { label: 'Latest News', path: '/', icon: Bell },
-      ]
+      path: '/announcements',
+      children: []
     }
   ];
 
