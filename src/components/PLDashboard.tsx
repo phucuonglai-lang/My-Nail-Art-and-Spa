@@ -83,14 +83,14 @@ interface PLData {
 
 export default function PLDashboard() {
   const { user } = useAuth();
-  const [gasUrl, setGasUrl] = useState<string>(() => localStorage.getItem('STE_PL_GAS_URL') || '');
-  const [sheetUrl, setSheetUrl] = useState<string>(() => localStorage.getItem('STE_PL_SHEET_URL') || '');
+  const [gasUrl, setGasUrl] = useState<string>('https://script.google.com/macros/s/AKfycbwmCmqvmlavSk29JajaaqxqbrcxhNIMM1nmRG-6ulwOmg5_vmOIpWjFFr9ruY9w-fDF/exec');
+  const [sheetUrl, setSheetUrl] = useState<string>('https://docs.google.com/spreadsheets/d/1khhhJzZCnipX1z1krclBfTlQCul3nAYDekaMhbY0sVA/edit?usp=sharing');
   
   const [data, setData] = useState<PLData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [showConfig, setShowConfig] = useState<boolean>(!localStorage.getItem('STE_PL_GAS_URL'));
+  const [showConfig, setShowConfig] = useState<boolean>(false);
   const [tempGasUrl, setTempGasUrl] = useState<string>(gasUrl);
   const [tempSheetUrl, setTempSheetUrl] = useState<string>(sheetUrl);
   
