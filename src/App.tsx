@@ -30,6 +30,9 @@ import ReportsPage from './components/ReportsPage';
 import SupplyPage from './components/SupplyPage';
 import PortfolioPage from './components/PortfolioPage';
 import AnnouncementsPage from './components/AnnouncementsPage';
+import PLDashboard from './components/PLDashboard';
+import CompoundInterestCalculator from './components/CompoundInterestCalculator';
+import UtilityPage from './components/UtilityPage';
 
 // --- Layouts ---
 
@@ -441,6 +444,11 @@ export default function App() {
                   <ReportsPage />
                 </SharedLayout>
               } />
+              <Route path="/pl" element={
+                <SharedLayout>
+                  <PLDashboard />
+                </SharedLayout>
+              } />
               <Route path="/portfolio" element={
                 <SharedLayout>
                   <PortfolioPage />
@@ -457,9 +465,13 @@ export default function App() {
                 </SharedLayout>
               } />
               <Route path="/announcements" element={
-                <SharedLayout>
-                  <AnnouncementsPage />
-                </SharedLayout>
+                <SharedLayout><AnnouncementsPage /></SharedLayout>
+              } />
+              <Route path="/calculator" element={
+                <SharedLayout><CompoundInterestCalculator /></SharedLayout>
+              } />
+              <Route path="/utility/:id" element={
+                <SharedLayout><UtilityPage /></SharedLayout>
               } />
               <Route path="/course/:courseId" element={
                 <SharedLayout>

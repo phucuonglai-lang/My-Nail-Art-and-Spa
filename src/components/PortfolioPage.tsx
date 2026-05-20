@@ -655,30 +655,32 @@ export default function PortfolioPage() {
                     onClick={() => setSelectedWork(work)}
                   >
                   <div className="aspect-square relative overflow-hidden bg-white/5">
-                    {work.imageUrls && work.imageUrls.length > 1 ? (
-                      <div className={cn(
-                        "grid h-full w-full gap-0.5",
-                        work.imageUrls.length === 2 ? "grid-cols-2" : 
-                        work.imageUrls.length === 3 ? "grid-cols-2 grid-rows-2" : 
-                        "grid-cols-2 grid-rows-2"
-                      )}>
-                        {work.imageUrls.slice(0, 4).map((url, i) => (
-                          <div key={i} className={cn(
-                            "relative overflow-hidden",
-                            work.imageUrls.length === 3 && i === 0 ? "row-span-2" : ""
-                          )}>
-                            <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                            {i === 3 && work.imageUrls.length > 4 && (
-                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-black">
-                                +{work.imageUrls.length - 4}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <img src={work.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                    )}
+                    {(() => {
+                      const urls = (work.imageUrls && work.imageUrls.length > 0) ? work.imageUrls : (work.imageUrl ? [work.imageUrl] : []);
+                      if (urls.length === 0) return <div className="w-full h-full bg-white/5 flex items-center justify-center"><ImageIcon className="text-white/20" size={32} /></div>;
+                      if (urls.length === 1) return <img src={urls[0]} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />;
+                      
+                      return (
+                        <div className={cn(
+                          "grid h-full w-full gap-0.5",
+                          urls.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2"
+                        )}>
+                          {urls.slice(0, 4).map((url, i) => (
+                            <div key={i} className={cn(
+                              "relative overflow-hidden",
+                              urls.length === 3 && i === 0 ? "row-span-2" : ""
+                            )}>
+                              <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                              {i === 3 && urls.length > 4 && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-black">
+                                  +{urls.length - 4}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     
                     <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-bold text-white uppercase tracking-widest flex items-center gap-1.5 border border-white/10">
                       <Clock size={10} className="text-brand-accent" /> {work.duration}

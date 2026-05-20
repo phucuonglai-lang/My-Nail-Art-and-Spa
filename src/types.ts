@@ -161,3 +161,12 @@ export interface PurchaseOrder {
   history?: PurchaseOrderHistory[];
 }
 
+export interface Utility {
+  id: string;
+  label: string;
+  path: string;
+  iconName: string;
+  order: number;
+  createdAt: any;
+  updatedAt: any;
+}

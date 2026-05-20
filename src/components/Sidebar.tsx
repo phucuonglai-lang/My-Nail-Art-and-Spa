@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,15 +19,78 @@ import {
   Package,
   Award,
   BookOpen,
-  Globe
+  Globe,
+  DollarSign,
+  TrendingUp,
+  Activity,
+  Calculator,
+  Calendar,
+  Camera,
+  MapPin,
+  Clock,
+  Compass,
+  CreditCard,
+  Database,
+  Image as ImageIcon,
+  Key,
+  Link as LinkIcon,
+  Mail,
+  Map,
+  MessageSquare,
+  Music,
+  Paperclip,
+  Phone,
+  Play,
+  Search,
+  Send,
+  Settings,
+  Share2,
+  ShoppingCart,
+  Star,
+  Tag,
+  User,
+  Video,
+  Wifi,
+  Wrench,
+  PenTool
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { Utility } from '../types';
 
 export default function Sidebar() {
   const { t } = useLanguage();
   const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>('nails');
+  const [utilities, setUtilities] = useState<Utility[]>([]);
+
+  useEffect(() => {
+    const fetchUtilities = async () => {
+      try {
+        const utilSnap = await getDocs(query(collection(db, 'utilities'), orderBy('order', 'asc')));
+        const utilData = utilSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Utility));
+        setUtilities(utilData);
+      } catch (e) {
+        console.error("Fetch Utilities Error:", e);
+      }
+    };
+    fetchUtilities();
+  }, []);
+
+  const isAuthorizedPL = user && ['phucuonglai@gmail.com', 'tieuboisgs@gmail.com'].includes(user.email || '');
+
+  // Helper to map icon string to lucide component
+  const getIconComponent = (iconName: string) => {
+    const icons: any = {
+      Globe, TrendingUp, Sparkles, Activity, Calculator, Calendar, Camera, MapPin,
+      Clock, Compass, CreditCard, Database, ImageIcon, Key, LinkIcon, Mail, Map,
+      MessageSquare, Music, Paperclip, Phone, Play, Search, Send, Settings, Share2,
+      ShoppingCart, Star, Tag, User, Video, Wifi, Wrench, PenTool
+    };
+    return icons[iconName] || Globe;
+  };
 
   const menuItems = [
     {
@@ -59,6 +122,14 @@ export default function Sidebar() {
       path: '/procedures', // Add direct path
       children: [] // No children needed if it's a direct hub
     },
+    ...(isAuthorizedPL ? [{
+      id: 'pl',
+      label: 'Hệ thống P/L',
+      icon: DollarSign,
+      color: 'text-brand-purple',
+      path: '/pl',
+      children: []
+    }] : []),
     {
       id: 'reports',
       label: 'Báo cáo',
@@ -97,7 +168,13 @@ export default function Sidebar() {
       icon: Sparkles,
       color: 'text-brand-purple',
       children: [
-        { label: 'Bộ Dịch Đa Ngôn Ngữ', path: 'https://translator-steven.vercel.app/', icon: Globe }
+        { label: 'Bộ Dịch Đa Ngôn Ngữ', path: 'https://translator-steven.vercel.app/', icon: Globe },
+        { label: 'Máy Tính Lãi Kép', path: '/calculator', icon: TrendingUp },
+        ...utilities.map(u => ({
+          label: u.label,
+          path: u.path,
+          icon: getIconComponent(u.iconName)
+        }))
       ]
     }
   ];

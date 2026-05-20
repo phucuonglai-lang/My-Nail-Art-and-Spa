@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch, setDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { Course, Lesson, Procedure, ProcedureStep, Policy } from '../types';
+import { Course, Lesson, Procedure, ProcedureStep, Policy, Utility } from '../types';
 import { Plus, Trash2, Edit2, Video, Image as ImageIcon, Layout, ArrowLeft, Save, X, GripVertical, ClipboardList, Settings, Sparkles, RefreshCw, FileText, File, Code, Globe, ShieldCheck, Lock, ArrowRight, Megaphone } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { cn } from '../lib/utils';
@@ -120,8 +120,9 @@ export default function AdminDashboard() {
   const [steps, setSteps] = useState<ProcedureStep[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [utilities, setUtilities] = useState<Utility[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'courses' | 'lessons' | 'procedures' | 'steps' | 'policies' | 'announcements'>('courses');
+  const [view, setView] = useState<'courses' | 'lessons' | 'procedures' | 'steps' | 'policies' | 'announcements' | 'utilities'>('courses');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(null);
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -130,6 +131,7 @@ export default function AdminDashboard() {
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingUtilityId, setEditingUtilityId] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuth, setIsAuth] = useState(false);
   const [passError, setPassError] = useState('');
@@ -168,6 +170,9 @@ export default function AdminDashboard() {
     type: 'text' as 'text' | 'html' | 'image' | 'pdf',
     content: '',
     desc: ''
+  });
+  const [newUtility, setNewUtility] = useState<Partial<Utility>>({
+    label: '', path: '', iconName: 'Globe', order: 1
   });
   const [uploading, setUploading] = useState(false);
 
@@ -262,6 +267,15 @@ export default function AdminDashboard() {
         setAnnouncements(annData);
       } catch (e) {
         console.error("Fetch Announcements Error:", e);
+      }
+
+      // Fetch Utilities
+      try {
+        const utilSnap = await getDocs(query(collection(db, 'utilities'), orderBy('order', 'asc')));
+        const utilData = utilSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Utility));
+        setUtilities(utilData);
+      } catch (e) {
+        console.error("Fetch Utilities Error:", e);
       }
     } catch (error) {
       console.error("Fetch Data Error:", error);
@@ -396,6 +410,63 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Delete Announcement Error:", error);
       alert("Lỗi khi xóa thông báo: " + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const fetchUtilities = async () => {
+    try {
+      const utilSnap = await getDocs(query(collection(db, 'utilities'), orderBy('order', 'asc')));
+      const utilData = utilSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Utility));
+      setUtilities(utilData);
+    } catch (e) {
+      console.error("Fetch Utilities Error:", e);
+    }
+  };
+
+  const handleAddUtility = async () => {
+    if (!newUtility.label || !newUtility.path) {
+      alert("Vui lòng nhập tên và đường dẫn tiện ích");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const docData = {
+        label: newUtility.label,
+        path: newUtility.path,
+        iconName: newUtility.iconName || 'Globe',
+        order: newUtility.order || 1,
+        createdAt: editingUtilityId 
+          ? (utilities.find(u => u.id === editingUtilityId)?.createdAt || serverTimestamp()) 
+          : serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingUtilityId) {
+        await updateDoc(doc(db, 'utilities', editingUtilityId), docData);
+      } else {
+        await addDoc(collection(db, 'utilities'), docData);
+      }
+      setIsAdding(false);
+      setEditingUtilityId(null);
+      setNewUtility({ label: '', path: '', iconName: 'Globe', order: 1 });
+      fetchUtilities();
+    } catch (error) {
+      console.error("Save Utility Error:", error);
+      alert("Lỗi khi lưu tiện ích: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUtility = async (id: string) => {
+    if (!window.confirm("Xác nhận xóa tiện ích này?")) return;
+    try {
+      await deleteDoc(doc(db, 'utilities', id));
+      fetchUtilities();
+    } catch (error) {
+      console.error("Delete Utility Error:", error);
+      alert("Lỗi khi xóa tiện ích: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -898,7 +969,8 @@ export default function AdminDashboard() {
               { id: 'courses', label: t.admin.courses },
               { id: 'procedures', label: t.admin.procedures_tab },
               { id: 'policies', label: 'QUY ĐỊNH' },
-              { id: 'announcements', label: 'THÔNG BÁO' }
+              { id: 'announcements', label: 'THÔNG BÁO' },
+              { id: 'utilities', label: 'TIỆN ÍCH' }
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -1377,6 +1449,89 @@ export default function AdminDashboard() {
               {announcements.length === 0 && (
                 <div className="col-span-full py-40 text-center bg-white/5 rounded-[60px] border-2 border-dashed border-brand-border mt-8">
                   <p className="text-white/10 italic uppercase tracking-[0.3em] font-black">Chưa có thông báo nào được tạo.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Utilities Management Grid */}
+        {view === 'utilities' && (
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both max-w-[1400px] mx-auto">
+            <div className="flex items-end justify-between mb-16 mt-24">
+              <div>
+                <span className="text-brand-purple text-[10px] font-black uppercase tracking-[0.5em] mb-4 block">Navigation Settings</span>
+                <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-4">TIỆN ÍCH</h2>
+                <p className="text-white/30 text-sm md:text-base max-w-2xl font-medium tracking-wide">Quản lý các đường link tiện ích mở rộng trên thanh Sidebar.</p>
+              </div>
+              <button 
+                onClick={() => { setIsAdding(true); setEditingUtilityId(null); setNewUtility({ label: '', path: '', iconName: 'Globe', order: utilities.length + 1 }); }}
+                className="group relative overflow-hidden bg-brand-card p-[1px] rounded-full shrink-0"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-purple via-brand-accent to-brand-blue opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+                <div className="relative px-8 py-5 bg-brand-card rounded-full flex items-center gap-4 border border-white/5 group-hover:bg-brand-card/80 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 group-hover:text-white group-hover:bg-brand-purple transition-all">
+                    <Plus size={16} />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-[3px] text-white">THÊM TIỆN ÍCH</span>
+                </div>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              {utilities.length > 0 ? utilities.map((util) => (
+                <div key={util.id} className="group relative bg-brand-card p-1 rounded-[40px] border border-brand-border hover:border-brand-purple/30 transition-all duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-transparent opacity-0 group-hover:opacity-100 rounded-[40px] transition-opacity duration-700 pointer-events-none" />
+                  
+                  <div className="absolute top-6 right-6 flex gap-2 z-20">
+                    <button 
+                      onClick={() => {
+                        setEditingUtilityId(util.id);
+                        setNewUtility(util);
+                        setIsAdding(true);
+                      }}
+                      className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-2xl flex items-center justify-center text-brand-blue hover:bg-brand-blue hover:text-white transition-all opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 duration-300 shadow-xl"
+                      title="Sửa tiện ích"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteUtility(util.id)}
+                      className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-2xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 duration-300 delay-75 shadow-xl"
+                      title="Xóa tiện ích"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+
+                  <div className="bg-[#121214] rounded-[36px] p-8 h-full flex flex-col relative z-10">
+                    <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-brand-purple/20 to-brand-accent/20 flex items-center justify-center text-brand-purple mb-8 shadow-inner shadow-white/5 border border-white/5">
+                      <Sparkles size={28} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2 leading-tight">{util.label}</h3>
+                    <p className="text-brand-accent/70 text-xs font-mono break-all">{util.path}</p>
+                    <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
+                      <span className="text-[10px] text-white/40 uppercase tracking-widest font-black">Icon: {util.iconName}</span>
+                      <span className="text-[10px] text-white/40 uppercase tracking-widest font-black">Order: {util.order}</span>
+                    </div>
+                  </div>
+                </div>
+              )) : null}
+
+              {/* Quick Add Utility Card */}
+              <button 
+                onClick={() => { setIsAdding(true); setEditingUtilityId(null); setNewUtility({ label: '', path: '', iconName: 'Globe', order: utilities.length + 1 }); }}
+                className="aspect-[16/10] bg-white/5 rounded-[40px] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 group hover:bg-white/10 hover:border-brand-purple/50 transition-all cursor-pointer min-h-[220px]"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-purple group-hover:text-white transition-all shadow-xl">
+                  <Plus size={32} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[4px] text-white/20 group-hover:text-white transition-all">THÊM TIỆN ÍCH</span>
+              </button>
+
+              {utilities.length === 0 && (
+                <div className="col-span-full py-40 text-center bg-white/5 rounded-[60px] border-2 border-dashed border-brand-border mt-8">
+                  <p className="text-white/10 italic uppercase tracking-[0.3em] font-black">Chưa có tiện ích nào được tạo.</p>
                 </div>
               )}
             </div>
@@ -1993,6 +2148,69 @@ export default function AdminDashboard() {
                          >
                            {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
                            {editingAnnouncementId ? 'Lưu thay đổi' : 'Đăng thông báo'}
+                         </button>
+                      </div>
+                    </>
+                  )}
+
+                  {view === 'utilities' && (
+                    <>
+                      <div className="space-y-3 mb-6">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Tên tiện ích</label>
+                        <input 
+                          type="text" 
+                          value={newUtility.label} 
+                          onChange={e => setNewUtility({...newUtility, label: e.target.value})}
+                          placeholder="e.g., Máy Tính Lãi Kép..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-purple/50 text-white font-bold transition-all placeholder:text-white/10"
+                        />
+                      </div>
+                      <div className="space-y-3 mb-6">
+                        <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Đường dẫn (URL / Path)</label>
+                        <input 
+                          type="text" 
+                          value={newUtility.path} 
+                          onChange={e => setNewUtility({...newUtility, path: e.target.value})}
+                          placeholder="e.g., /calculator hoặc https://..."
+                          className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-purple/50 text-brand-accent font-mono transition-all placeholder:text-white/10"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Tên Icon (Lucide React)</label>
+                          <input 
+                            type="text" 
+                            value={newUtility.iconName} 
+                            onChange={e => setNewUtility({...newUtility, iconName: e.target.value})}
+                            placeholder="e.g., Globe, Sparkles..."
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-purple/50 text-white font-bold transition-all placeholder:text-white/10"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[3px] text-white/30 block ml-1">Thứ tự</label>
+                          <input 
+                            type="number" 
+                            value={newUtility.order} 
+                            onChange={e => setNewUtility({...newUtility, order: Number(e.target.value)})}
+                            className="w-full bg-white/5 border border-white/5 p-5 rounded-[22px] outline-none focus:border-brand-purple/50 text-white font-bold transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-4 mt-10 border-t border-white/5">
+                         <button 
+                           onClick={() => { setIsAdding(false); setEditingUtilityId(null); setNewUtility({label: '', path: '', iconName: 'Globe', order: 1}); }}
+                           className="flex-1 px-8 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[3px] text-white/40 hover:bg-white/5 transition-all"
+                         >
+                           {t.admin.cancel}
+                         </button>
+                         <button 
+                           onClick={handleAddUtility}
+                           disabled={loading}
+                           className="flex-[2] bg-gradient-to-r from-brand-purple to-brand-blue text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[4px] shadow-2xl shadow-brand-purple/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                         >
+                           {loading ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
+                           {editingUtilityId ? 'Lưu thay đổi' : 'Lưu tiện ích'}
                          </button>
                       </div>
                     </>

@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { Lock, ArrowRight, TrendingUp, DollarSign, Users, Store, ExternalLink, FileText, File, BarChart3, Table as TableIcon } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Lock, ArrowRight, TrendingUp, DollarSign, Users, Store, ExternalLink, FileText, File, BarChart3, Table as TableIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
+const SHEET_ID = '1pZwSqVYBtxwtyatnf-0tjjJJsFGahGivY-qSk3qH_GQ';
+
 // Linked to the user provided Google Sheet
-const BRANCH_SHEETS = [
+const INITIAL_BRANCH_SHEETS = [
   {
     id: 'kendall',
     name: 'Kendall',
@@ -176,8 +178,75 @@ export default function ReportsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
-  const [activeTab, setActiveTab] = useState(BRANCH_SHEETS[0].id);
+  const [activeTab, setActiveTab] = useState(INITIAL_BRANCH_SHEETS[0].id);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  
+  const [branchData, setBranchData] = useState(INITIAL_BRANCH_SHEETS);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const updatedData = JSON.parse(JSON.stringify(INITIAL_BRANCH_SHEETS));
+      
+      for (let i = 0; i < updatedData.length; i++) {
+        const branch = updatedData[i];
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${branch.name}`);
+        const text = await res.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+        
+        const rows = data.table.rows;
+        if (rows && rows.length > 0) {
+           const totalRow = rows[0].c;
+           branch.stats = {
+             revenue: totalRow[3]?.f || totalRow[3]?.v || '$0',
+             salary: totalRow[4]?.f || totalRow[4]?.v || '$0',
+             profit: totalRow[2]?.f || totalRow[2]?.v || '$0'
+           };
+           
+           const chartData = [];
+           const labels = [];
+           const tableData = [];
+           
+           for (let j = 1; j < rows.length; j++) {
+             const row = rows[j].c;
+             if (!row || !row[0] || !row[0].v) continue;
+             
+             const label = row[0].v;
+             const cash = row[1]?.f || row[1]?.v || '';
+             const profit = row[2]?.f || row[2]?.v || '';
+             const revenueF = row[3]?.f || row[3]?.v || '';
+             const revenueV = row[3]?.v || 0;
+             const salary = row[4]?.f || row[4]?.v || '';
+             
+             tableData.push([label, cash, profit, revenueF, salary]);
+             
+             if (!label.toLowerCase().includes("chia lợi nhuận")) {
+               const shortLabel = label.split('-')[0];
+               labels.push(shortLabel);
+               chartData.push(Number(revenueV));
+             }
+           }
+           
+           branch.chartData = chartData;
+           branch.labels = labels;
+           branch.tableData = tableData;
+        }
+      }
+      setBranchData(updatedData);
+    } catch (e) {
+      console.error("Error fetching sheet data:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +300,7 @@ export default function ReportsPage() {
     );
   }
 
-  const activeBranch = BRANCH_SHEETS.find(b => b.id === activeTab);
+  const activeBranch = branchData.find(b => b.id === activeTab);
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 bg-transparent max-w-7xl mx-auto">
@@ -247,7 +316,7 @@ export default function ReportsPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div className="flex flex-wrap gap-3">
-          {BRANCH_SHEETS.map(branch => (
+          {branchData.map(branch => (
             <button
               key={branch.id}
               onClick={() => setActiveTab(branch.id)}
@@ -284,6 +353,14 @@ export default function ReportsPage() {
             <TableIcon size={14} /> Trang tính
           </button>
         </div>
+        <button
+          onClick={() => fetchData()}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-brand-border rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all ml-auto md:ml-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Đồng bộ dữ liệu"
+        >
+          <RefreshCw size={14} className={cn(loading && "animate-spin")} /> Làm mới
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
